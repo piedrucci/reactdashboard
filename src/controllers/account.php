@@ -29,6 +29,19 @@ class Account extends DBConnection {
         echo json_encode( $this->jsonObject );
 
     }
+
+    function getAccount($id) {
+        $response = $this->executeRequest('SELECT * FROM account WHERE id=?');
+        foreach ( $response as $row ) {
+            array_push( $this->listObjects, array( "username" => $row['username']) );
+        }
+
+        $this->jsonObject['success'] = true;
+        $this->jsonObject['data'] = $this->listObjects;
+
+        echo json_encode( $this->jsonObject );
+
+    }
 }
 
 ?>
