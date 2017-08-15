@@ -2,7 +2,8 @@ import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 // import Home from '../home'
 import Login from '../login'
-import ChartContainer from '../chart'
+// import ChartContainer from '../chart'
+import Dashboard from '../dashboard'
 
 // The Main component renders one of the three provided
 // Routes (provided that one matches). Both the /roster
@@ -13,8 +14,8 @@ const Main = () => (
   <main>
     <Switch>
       <Route exact path='/' component={Login}/>
-      <Route path='/dashboard' component={ChartContainer}/>
-      {/* <Route path='/schedule' component={Schedule}/> */}
+      {/* <Route path='/dashboard' component={ChartContainer}/> */}
+      <Route path='/dashboard' component={Dashboard}/>
     </Switch>
   </main>
 )
