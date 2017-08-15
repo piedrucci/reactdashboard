@@ -75,7 +75,7 @@ class Franchise extends Component {
     <button onClick={()=>this.boton()}>Ver data</button>
 
   </div>
-
+// https://codesandbox.io/s/vVoQVk78
     )
 
   }
