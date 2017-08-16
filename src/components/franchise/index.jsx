@@ -3,12 +3,15 @@ import React, {Component} from 'react'
 import DateTimePicker from 'react-datetimepicker-bootstrap'
 
 import ChartContainer from './../chart'
+import {types} from './../chart/chart'
 
 import moment from 'moment'
 
 import api from './../../shared/api'
 
 import utils from './../../shared/utilities'
+
+// import * as $ from 'jquery'
 
 const dateFormat = "M/D/YYYY"
 
@@ -44,7 +47,13 @@ class Franchise extends Component {
           borderColor: [],
           borderWidth: 1
         }]
+      },
+      chartOptions: {
+        displayTitle: true,
+        displayLegend: true,
+        legendPosition: ''
       }
+
     }
     this.handleChange = this.handleChange.bind(this);
     this.getStats = this.getStats.bind(this);
@@ -78,26 +87,31 @@ class Franchise extends Component {
       .then(json => {
         if (json.encontro) {
           this.showStats(json.data)
+        }else{
+          alert("No hay resultados estadisticos para mostrar....")
         }
       });
   }
 
 // CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
   showStats(data) {
-    // console.log(data)
     let labels = []
     let datasetsLabel= chartView.itemsVendidos
     let datasetsData = []
     let datasetsBgColor = []
     let datasetsBdColor = []
 
+    let rgba = null
+    let trimLabel = null
     data.map( (item, index) => {
-      labels.push(item.item.nombre)
+      trimLabel = item.item.nombre.substr(0, 15);
+      labels.push(trimLabel)
       datasetsData.push(item.item.total_vendido)
 
-      const rgba = utils.generateRGBA()
+      rgba = utils.generateRGBA()
       datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.6)' )
       datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
+      return null
     } )
 
     const chartData = {
@@ -125,26 +139,26 @@ class Franchise extends Component {
       inicio = (inicio / 1000)
 
       this.setState({date1:{value:value, epoch: inicio} })
-      console.log(`inicio: ${inicio}`)
+      // console.log(`inicio: ${inicio}`)
     } else if ( tipoFecha === 'fin' ) {
       // CONVIERTE A FORMATO EPOCH (UNIX)
       fin = moment(value + " 23:59:59 +0000", "M/D/YYYY HH:mm:ss Z").valueOf();
       fin = (fin / 1000)
 
       this.setState({date2:{value:value, epoch: fin} })
-      console.log(`fin: ${fin}`)
+      // console.log(`fin: ${fin}`)
     }
 
   }
-
 
   handleChange(event) {
     this.setState({[event.target.name]: event.target.value});
   }
 
-  boton() {
-    alert('probando')
-  }
+
+
+
+
 
   render() {
 
@@ -154,7 +168,6 @@ class Franchise extends Component {
 
     return (
       <div className="container">
-
 
 
         <div className="row">
@@ -204,9 +217,10 @@ class Franchise extends Component {
                   className="custom-select mb-2 mr-sm-2 mb-sm-0"
                   id="selectChart"
                   >
-                  <option value="bar">Bar</option>
-                  <option value="pie">Pie</option>
-                  <option value="line">Line</option>
+                  <option value={types.bar}>Bar</option>
+                  <option value={types.pie}>Pie</option>
+                  <option value={types.line}>Line</option>
+                  <option value={types.doughnut}>Doughnut</option>
                 </select>
 
               </div>
@@ -258,13 +272,13 @@ class Franchise extends Component {
             <ChartContainer
               chartType={this.state.chartType}
               chartData={this.state.chartData}
+              chartOptions={this.state.chartOptions}
             />
           </div>
         </div>
 
-        <button onClick={() => this.boton()}>Ver data</button>
 
-      </div>
+      </div>  // Container
     // https://codesandbox.io/s/vVoQVk78
     )
 
@@ -274,10 +288,10 @@ class Franchise extends Component {
 
 export default Franchise
 
-const styleButton = {
-  color: 'yellow',
-  // backgroundImage: 'url(' + imgUrl + ')',
-};
+// const styleButton = {
+//   color: 'yellow',
+//   // backgroundImage: 'url(' + imgUrl + ')',
+// };
 
 // 1 enero 5pm 1483290000         1 julio 1498896000
 // 31 enero 1485882000            31 julio 1501520400

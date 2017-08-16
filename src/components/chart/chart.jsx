@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
-import { Bar, Line, Pie } from 'react-chartjs-2'
+import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2'
 
 export const types = {
   bar: 'bar',
   pie: 'pie',
   line: 'line',
+  doughnut: 'doughnut'
 }
 
 class Chart extends Component {
@@ -12,9 +13,9 @@ class Chart extends Component {
     super(props)
     this.state = {
       chartType: props.chartType,
-      chartData: props.chartData
+      chartData: props.chartData,
+      chartOptions: props.charOptions
     }
-
   }
 
   componentWillReceiveProps(nextProps) {
@@ -25,77 +26,102 @@ class Chart extends Component {
   }
 
   static defaultProps = {
-    displayTitle: true,
-    displayLegend: true,
-    legendPosition: 'right',
+    chartOptions: {
+      displayTitle: true,
+      displayLegend: true,
+      legendPosition: 'right',
+    },
     chartType: types.line,
+    chartData: null
   }
 
 
   render() {
+
     let renderChart = null
-    if (this.state.chartType==='bar'){
+    if (this.state.chartType===types.bar){
       renderChart = <Bar
-          data={this.state.chartData}
-          // width={100}
-          // height={50}
-          options={{
-            maintainAspectRatio: false,
-            title: {
-              display: this.props.displayTitle,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
-            },
-            legend:{
-              display: this.props.displayLegend,
-              position: 'right'
-            }
-          }}
-        />
-    }
-    if (this.state.chartType==='pie'){
-      renderChart = <Pie
-          data={this.state.chartData}
-          // width={100}
-          // height={50}
-          options={{
-            maintainAspectRatio: false,
-            title: {
-              display: this.props.displayTitle,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
-            },
-            legend:{
-              display: this.props.displayLegend,
-              position: 'right'
-            }
-          }}
-        />
-    }
-    if (this.state.chartType==='line'){
-      renderChart = <Line
           data={this.state.chartData}
           // width={100}
           // height={50}
           options={{
             // maintainAspectRatio: false,
             title: {
-              display: this.props.displayTitle,
+              display: true,
               text: 'Ventas Por Franquicia',
               fontSize:25
             },
             legend:{
               display: this.props.displayLegend,
-              position: 'right'
+              // position: 'right'
+            }
+          }}
+        />
+    }
+    if (this.state.chartType===types.pie){
+      renderChart = <Pie
+          data={this.state.chartData}
+          // width={100}
+          // height={50}
+          options={{
+            // maintainAspectRatio: false,
+            title: {
+              display: true,
+              text: 'Ventas Por Franquicia',
+              fontSize:25
+            },
+            legend:{
+              display: this.props.displayLegend,
+              // position: 'right'
+            }
+          }}
+        />
+    }
+    if (this.state.chartType===types.line){
+      renderChart = <Line
+          data={this.state.chartData}
+          width={800}
+          height={600}
+          options={{
+            // maintainAspectRatio: false,
+            title: {
+              display: true,
+              text: 'Ventas Por Franquicia',
+              fontSize:25
+            },
+            legend:{
+              display: true,
+              // position: 'right'
+            }
+          }}
+        />
+    }
+    if (this.state.chartType===types.doughnut){
+      renderChart = <Doughnut
+          data={this.state.chartData}
+          width={800}
+          height={600}
+          options={{
+            // maintainAspectRatio: false,
+            title: {
+              display: true,
+              text: 'Ventas Por Franquicia',
+              fontSize:25
+            },
+            legend:{
+              display: true,
+              // position: 'right'
             }
           }}
         />
     }
 
+// console.log(this.state.chartData.labels.length)
     return (
 
       <div>
-        {renderChart}
+        {this.state.chartData.labels.length ? renderChart : null}
+        {/* {renderChart} */}
       </div>
 
     )
