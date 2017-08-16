@@ -18,7 +18,10 @@ class Chart extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this.setState({chartType:nextProps.chartType})
+    this.setState({
+      chartType:nextProps.chartType,
+      chartData:nextProps.chartData
+    })
   }
 
   static defaultProps = {

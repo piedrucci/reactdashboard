@@ -6,7 +6,15 @@ import ChartContainer from './../chart'
 
 import moment from 'moment'
 
-import api from './../../api/api'
+import api from './../../shared/api'
+
+import utils from './../../shared/utilities'
+
+const dateFormat = "M/D/YYYY"
+
+const chartView = {
+  itemsVendidos: 'Items Vendidos',
+}
 
 class Franchise extends Component {
   constructor() {
@@ -14,14 +22,36 @@ class Franchise extends Component {
     this.state = {
       totalBranchs: 0,
       dataList: [],
-      date1: moment(),
+      date1: {
+        value: moment().format(dateFormat),
+        epoch: null,
+        maxDate: [moment().format(dateFormat)]
+      },
+      date2: {
+        value: moment().format(dateFormat),
+        epoch: null,
+        maxDate: [moment().format(dateFormat)]
+      },
       chartType: 'line',
-      month: 'agosto'
+      month: 'agosto',
+
+      chartData: {
+        labels:[],
+        datasets:[{
+          label: '',
+          data: [],
+          backgroundColor: [],
+          borderColor: [],
+          borderWidth: 1
+        }]
+      }
     }
     this.handleChange = this.handleChange.bind(this);
+    this.getStats = this.getStats.bind(this);
   }
 
   componentDidMount() {
+    moment.locale('es')
     this.fetchData()
   }
 
@@ -36,15 +66,75 @@ class Franchise extends Component {
       });
   }
 
-  setDate(value) {
-    this.setState({date1: value})
+// OBTIENE LAS ESTADISTICAS PARA EL RANGO DE FECHAS SELECCIONADAS
+  getStats() {
+    const fechas = {
+      inicio: this.state.date1.epoch,
+      fin: this.state.date2.epoch
+    }
+    const res = api.getItemsVendidosFechas(fechas)
+    res
+      .then(response => response.json())
+      .then(json => {
+        if (json.encontro) {
+          this.showStats(json.data)
+        }
+      });
+  }
 
-    // CONVIERTE A FORMATO EPOCH (UNIX)
-    var ts = moment(this.state.date1 + " 8:00", "M/D/YYYY H:mm").valueOf();
-    ts = (ts / 1000)
+// CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
+  showStats(data) {
+    // console.log(data)
+    let labels = []
+    let datasetsLabel= chartView.itemsVendidos
+    let datasetsData = []
+    let datasetsBgColor = []
+    let datasetsBdColor = []
 
-    // var m = moment(ts); var s = m.format("M/D/YYYY H:mm"); var m =
-    // moment.unix(ts); console.log(this.state.date1)
+    data.map( (item, index) => {
+      labels.push(item.item.nombre)
+      datasetsData.push(item.item.total_vendido)
+
+      const rgba = utils.generateRGBA()
+      datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.6)' )
+      datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
+    } )
+
+    const chartData = {
+      labels: labels,
+      datasets:[{
+        label: datasetsLabel,
+        data: datasetsData,
+        backgroundColor: datasetsBgColor,
+        borderColor: datasetsBdColor,
+        borderWidth: 1
+      }]
+    }
+    this.setState({chartData:chartData})
+  }
+
+
+// PREPARA LAS FECHAS EN FORMATO EPOCH ... AL SER SELECCIONADAS EN EL PICKER
+  setDate(value, tipoFecha) {
+    let inicio = null
+    let fin = null
+
+    if ( tipoFecha === 'inicio' ) {
+      // CONVIERTE A FORMATO EPOCH (UNIX)
+      inicio = moment(value + " 00:00:00 +0000", "M/D/YYYY HH:mm:ss Z").valueOf();
+      inicio = (inicio / 1000)
+
+      this.setState({date1:{value:value, epoch: inicio} })
+      console.log(`inicio: ${inicio}`)
+    } else if ( tipoFecha === 'fin' ) {
+      // CONVIERTE A FORMATO EPOCH (UNIX)
+      fin = moment(value + " 23:59:59 +0000", "M/D/YYYY HH:mm:ss Z").valueOf();
+      fin = (fin / 1000)
+
+      this.setState({date2:{value:value, epoch: fin} })
+      console.log(`fin: ${fin}`)
+    }
+
   }
 
 
@@ -59,12 +149,12 @@ class Franchise extends Component {
   render() {
 
     // CARGAR LAS SUCURSALES
-    const sucs = this.state.dataList.map((item, index) => 
+    const sucs = this.state.dataList.map((item, index) =>
       <button key={index} type="button" onClick={ () => this.setState({wer:'ojooo'}) } className="list-group-item list-group-item-action">{item.negocio}</button>)
 
     return (
       <div className="container">
-      
+
 
 
         <div className="row">
@@ -80,13 +170,13 @@ class Franchise extends Component {
             </div>
             <div className="col-sm-4">
               <div className="list-group">
-                <a href="#" className="list-group-item active">
+                <a role="button" style={{color:'white'}} className="list-group-item active">
                   Totales
                 </a>
-                <a href="#" className="list-group-item list-group-item-action">Total del Dia</a>
-                <a href="#" className="list-group-item list-group-item-action">Morbi leo risus</a>
-                <a href="#" className="list-group-item list-group-item-action">Porta ac consectetur ac</a>
-                <a href="#" className="list-group-item list-group-item-action ">Vestibulum at eros</a>
+                <a role="button" className="list-group-item list-group-item-action">Total del Dia</a>
+                <a role="button" className="list-group-item list-group-item-action">Morbi leo risus</a>
+                <a role="button" className="list-group-item list-group-item-action">Porta ac consectetur ac</a>
+                <a role="button" className="list-group-item list-group-item-action ">Vestibulum at eros</a>
               </div>
             </div>
           </div>
@@ -111,7 +201,7 @@ class Franchise extends Component {
                 <select
                   name="chartType"
                   value={this.state.chartType} onChange={this.handleChange}
-                  className="custom-select mb-2 mr-sm-2 mb-sm-0" 
+                  className="custom-select mb-2 mr-sm-2 mb-sm-0"
                   id="selectChart"
                   >
                   <option value="bar">Bar</option>
@@ -124,7 +214,7 @@ class Franchise extends Component {
                 <select
                   name="month"
                   value={this.state.month} onChange={this.handleChange}
-                  // className="form-control form-control-lg" 
+                  className="form-control form-control-lg"
                   id="seleMonth"
                   >
                     <option value="enero">Enero</option>
@@ -138,14 +228,37 @@ class Franchise extends Component {
                 </select>
               </div>
             </form>
-            
+
+          </div>
+
+          <div className="col-sm-4">
+            <DateTimePicker
+              id="date1"
+              format={dateFormat}
+              placeholder="Fecha Inicio"
+              getValue={(v)=>this.setDate(v, 'inicio')}
+            />
+
+            <DateTimePicker
+              id="date2"
+              format={dateFormat}
+              placeholder="Fecha Fin"
+              getValue={(v)=>this.setDate(v, 'fin')}
+            />
+            <button
+              className="btn btn-primary"
+              onClick={this.getStats}
+              >Cargar Info</button>
           </div>
 
         </div>
 
         <div className="row">
           <div className="col-sm-12">
-            <ChartContainer wwww={this.state.wer} chartType={this.state.chartType}/>
+            <ChartContainer
+              chartType={this.state.chartType}
+              chartData={this.state.chartData}
+            />
           </div>
         </div>
 
@@ -160,6 +273,11 @@ class Franchise extends Component {
 }
 
 export default Franchise
+
+const styleButton = {
+  color: 'yellow',
+  // backgroundImage: 'url(' + imgUrl + ')',
+};
 
 // 1 enero 5pm 1483290000         1 julio 1498896000
 // 31 enero 1485882000            31 julio 1501520400

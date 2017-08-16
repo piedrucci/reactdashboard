@@ -17,6 +17,12 @@ var api =
     const response = await fetch( endPoint + 'citas/TotalPorFecha/fini/' + fechas.inicio + '/ffin/' + fechas.fin,
                                   { headers: { 'APIKEY': APIKEY } })
     return response
+  },
+
+  async getItemsVendidosFechas(fechas) {
+    const fullPath = endPoint + 'citas/TotalesItemsVendidosFechas/fini/' + fechas.inicio + '/ffin/' + fechas.fin
+    const response = await fetch( fullPath, { headers: { 'APIKEY': APIKEY } })
+    return response
   }
 
 }
