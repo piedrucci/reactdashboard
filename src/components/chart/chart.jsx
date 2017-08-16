@@ -17,6 +17,10 @@ class Chart extends Component {
 
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({chartType:nextProps.chartType})
+  }
+
   static defaultProps = {
     displayTitle: true,
     displayLegend: true,
@@ -24,14 +28,11 @@ class Chart extends Component {
     chartType: types.line,
   }
 
+
   render() {
-
-    return (
-
-      <div>
-
-        {this.state.chartType==='bar' ?
-        <Bar
+    let renderChart = null
+    if (this.state.chartType==='bar'){
+      renderChart = <Bar
           data={this.state.chartData}
           // width={100}
           // height={50}
@@ -48,10 +49,9 @@ class Chart extends Component {
             }
           }}
         />
-        : null }
-
-        {this.state.chartType==='pie' ?
-        <Pie
+    }
+    if (this.state.chartType==='pie'){
+      renderChart = <Pie
           data={this.state.chartData}
           // width={100}
           // height={50}
@@ -68,11 +68,9 @@ class Chart extends Component {
             }
           }}
         />
-        : null }
-
-
-        {this.state.chartType==='line' ?
-        <Line
+    }
+    if (this.state.chartType==='line'){
+      renderChart = <Line
           data={this.state.chartData}
           // width={100}
           // height={50}
@@ -89,10 +87,13 @@ class Chart extends Component {
             }
           }}
         />
-        : null }
+    }
 
+    return (
+
+      <div>
+        {renderChart}
       </div>
-
 
     )
 
