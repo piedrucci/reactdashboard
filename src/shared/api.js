@@ -1,27 +1,25 @@
 
 const endPoint = 'https://testing.invucorp.com/invuApiPos/index.php?r='
 
-const APIKEY = 'bd_pos'
-
 var api =
 {
-  async getBrachs() {
+  getBrachs(apiKey) {
 
-    const response = await fetch( endPoint + 'configuraciones/Franquicias',
-                                  { headers: { 'APIKEY': APIKEY } })
+    const response = fetch( endPoint + 'configuraciones/Franquicias',
+                                  { headers: { 'APIKEY': apiKey } })
     return response
   },
 
-  async getFinDiaFechas(fechas) {
-
-    const response = await fetch( endPoint + 'citas/TotalPorFecha/fini/' + fechas.inicio + '/ffin/' + fechas.fin,
-                                  { headers: { 'APIKEY': APIKEY } })
+  getFinDiaFechas(fechas, apiKey) {
+// https://testing.invucorp.com/invuApiPos/index.php?r=citas/TotalPorFecha/fini/1502755200/ffin/1502841599
+    const response = fetch( endPoint + 'citas/TotalPorFecha/fini/' + fechas.inicio + '/ffin/' + fechas.fin,
+                                  { headers: { 'APIKEY': apiKey } })
     return response
   },
 
-  async getItemsVendidosFechas(fechas) {
+  async getItemsVendidosFechas(fechas, apiKey) {
     const fullPath = endPoint + 'citas/TotalesItemsVendidosFechas/fini/' + fechas.inicio + '/ffin/' + fechas.fin
-    const response = await fetch( fullPath, { headers: { 'APIKEY': APIKEY } })
+    const response = await fetch( fullPath, { headers: { 'APIKEY': apiKey } })
     return response
   }
 

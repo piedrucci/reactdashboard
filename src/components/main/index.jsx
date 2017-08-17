@@ -3,6 +3,7 @@ import { Switch, Route } from 'react-router-dom'
 // import Home from '../home'
 import Login from '../login'
 // import ChartContainer from '../chart'
+import Statistic from '../statistic'
 import Dashboard from '../dashboard'
 
 // The Main component renders one of the three provided
@@ -15,6 +16,7 @@ const Main = () => (
     <Switch>
       <Route exact path='/' component={Login}/>
       {/* <Route path='/dashboard' component={ChartContainer}/> */}
+      <Route path='/stats' component={Statistic}/>
       <Route path='/dashboard' component={Dashboard}/>
     </Switch>
   </main>
