@@ -4,6 +4,8 @@ import Branch from './../branch'
 import utils from './../../shared/utilities'
 import ChartContainer from './../chart'
 import { types, position } from './../chart/chart'
+import moment from 'moment'
+// console.log(moment.locale('es')); // es
 
 const apiKey = 'bd_pos'
 
@@ -31,6 +33,11 @@ const chartOptions2 = {
   }
 }
 
+const filter = {
+  day: 'day',
+  week: 'week',
+  month: 'month'
+}
 
 class Statistic extends Component {
 
@@ -54,8 +61,10 @@ class Statistic extends Component {
         }]
       },
 
-
     }
+
+    this.setFilterType = this.setFilterType.bind(this)
+
   }
 
     componentDidMount() {
@@ -63,23 +72,35 @@ class Statistic extends Component {
     }
 
     // OBTENER TODAS LAS SUCURSALES
-    async fetchData() {
-      const res = await api.getBrachs(apiKey)
-      const data = await res.json()
-      this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length});
-      // console.log(data)
-      this.getSalesSummary()
+    fetchData() {
+      try{
+        // const res = await api.getBrachs(apiKey)
+        const res = fetch('https://testing.invucorp.com/invuApiPos/index.php?r=configuraciones/Franquicias',
+      { headers: { 'APIKEY': 'bd_pos' } }).then( (data) => {
+
+        console.log(data);
+        return data.json()
+      }).then( (json) => console.log(json) )
+      // const data = await res.json()
+        // this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length});
+        // // console.log(data)
+        // this.getSalesSummary(null)
+      }catch(err){
+        console.error(err)
+      }
     }
 
     // OBTENER TODOS LOS FIN DEL DIA POR CADA SUCURSAL
-    async getSalesSummary() {
+    async getSalesSummary(dates) {
        try{
-
+console.log(dates);
+         const dateRange = (dates===null) ?
         //  FECHAS DEL DIA ANTERIOR (15-AGO)
-         const fechas = {
+         {
            inicio: 1502755200,
            fin: 1502841599,
          }
+         : dates
 
         //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
          const branchs = this.state.dataList
@@ -89,7 +110,7 @@ class Statistic extends Component {
          await Promise.all (branchs.map(
            async (item, index) => {
             //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
-             const res = await api.getFinDiaFechas(fechas, item.APIKEY)
+             const res = await api.getFinDiaFechas(dateRange, item.APIKEY)
              const data = await res.json()
 
              const branchElement = {
@@ -157,6 +178,50 @@ class Statistic extends Component {
       }
 
 
+      setFilterType(f) {
+        // obtener la fecha actual
+        const today = moment().format(utils.getDateFormat())
+        const todayEpoch = utils.getEpochDate(today)
+
+        const dayOfMonth = moment().format('D')
+        const showMonth = (Math.trunc(dayOfMonth / 7)) > 0
+
+
+        switch (f) {
+          case filter.day:
+            console.log('filtro en dias')
+            break;
+          case filter.week:
+            // obtener la fecha del inicio de la semana actual
+            const inicioSemana = moment().day(1).format(utils.getDateFormat())
+            const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
+
+            console.log(todayEpoch)
+            console.log(inicioSemanaEpoch)
+
+            this.getSalesSummary({
+              inicio: inicioSemanaEpoch[0],
+              fin: todayEpoch[1]
+            })
+
+            break;
+          case filter.month:
+            // let arrayMonth = []
+            // for (var i = 1; i < 9; i++) {
+            //    n += i;
+            //    mifuncion(n);
+            // }
+
+            // console.log(`dia de la semana: ${moment().weekday()}`)
+            // console.log(`dia del ano: ${moment().dayOfYear()}`)
+            // console.log(`mes del ano: ${moment().month() + 1}`)
+            break;
+          default:
+            break;
+        }
+      }
+
+
   render() {
 
     return (
@@ -180,10 +245,24 @@ class Statistic extends Component {
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
-                onClick={()=>alert('dia')}
+                onClick={()=>this.setFilterType(filter.day)}
                 >Dia</button>
-              <button type="button" className="btn btn-info btn-lg btn-block" data-toggle="buttons" aria-pressed="false" autoComplete="off">Semana</button>
-              <button type="button" className="btn btn-info btn-lg btn-block" data-toggle="buttons" aria-pressed="false" autoComplete="off">Mes</button>
+              <button
+                type="button"
+                className="btn btn-info btn-lg btn-block"
+                data-toggle="buttons"
+                aria-pressed="false"
+                autoComplete="off"
+                onClick={()=>this.setFilterType(filter.week)}
+                >Semana</button>
+              <button
+                type="button"
+                className="btn btn-info btn-lg btn-block"
+                data-toggle="buttons"
+                aria-pressed="false"
+                autoComplete="off"
+                onClick={()=>this.setFilterType(filter.month)}
+                >Mes</button>
             </div>
           </div>
           <div className="col-sm-10">
