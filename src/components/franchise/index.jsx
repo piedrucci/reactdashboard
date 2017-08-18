@@ -3,7 +3,7 @@ import React, {Component} from 'react'
 import DateTimePicker from 'react-datetimepicker-bootstrap'
 
 import ChartContainer from './../chart'
-import {types} from './../chart/chart'
+import { types, position } from './../chart/chart'
 
 import moment from 'moment'
 
@@ -14,6 +14,19 @@ import utils from './../../shared/utilities'
 // import * as $ from 'jquery'
 
 const dateFormat = "M/D/YYYY"
+
+
+const chartOptions1 = {
+  displayTitle: true,
+  titleSize: 16,
+  displayLegend: true,
+  legendPosition: position.bottom,
+  maintainAspectRatio: false,
+  size: {
+    width: 0,
+    height: 400
+  }
+}
 
 const chartView = {
   itemsVendidos: 'Items Vendidos',
@@ -272,7 +285,7 @@ class Franchise extends Component {
             <ChartContainer
               chartType={this.state.chartType}
               chartData={this.state.chartData}
-              chartOptions={this.state.chartOptions}
+              chartOptions={chartOptions1}
             />
           </div>
         </div>

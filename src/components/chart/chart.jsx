@@ -8,20 +8,28 @@ export const types = {
   doughnut: 'doughnut'
 }
 
+export const position = {
+  top: 'top',
+  right: 'right',
+  bottom: 'bottom',
+  left: 'left'
+}
+
 class Chart extends Component {
   constructor(props) {
     super(props)
     this.state = {
       chartType: props.chartType,
       chartData: props.chartData,
-      chartOptions: props.charOptions
+      chartOptions: props.chartOptions
     }
   }
 
   componentWillReceiveProps(nextProps) {
     this.setState({
       chartType:nextProps.chartType,
-      chartData:nextProps.chartData
+      chartData:nextProps.chartData,
+      chartOptions:nextProps.chartOptions
     })
   }
 
@@ -37,23 +45,24 @@ class Chart extends Component {
 
 
   render() {
+    // console.log(this.state.chartData.title)
 
     let renderChart = null
     if (this.state.chartType===types.bar){
       renderChart = <Bar
           data={this.state.chartData}
-          // width={100}
-          // height={50}
+          width={this.state.chartOptions.size.width}
+          height={this.state.chartOptions.size.height}
           options={{
-            // maintainAspectRatio: false,
+            maintainAspectRatio: this.state.chartOptions.maintainAspectRatio,
             title: {
-              display: true,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
+              display: this.state.chartOptions.displayTitle,
+              text: this.state.chartData.title,
+              fontSize: this.state.chartOptions.titleSize
             },
             legend:{
-              display: this.props.displayLegend,
-              // position: 'right'
+              display: this.state.chartOptions.displayLegend,
+              position: this.state.chartOptions.legendPosition
             }
           }}
         />
@@ -61,18 +70,18 @@ class Chart extends Component {
     if (this.state.chartType===types.pie){
       renderChart = <Pie
           data={this.state.chartData}
-          // width={100}
-          // height={50}
+          width={this.state.chartOptions.size.width}
+          height={this.state.chartOptions.size.height}
           options={{
-            // maintainAspectRatio: false,
+            maintainAspectRatio: this.state.chartOptions.maintainAspectRatio,
             title: {
-              display: true,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
+              display: this.state.chartOptions.displayTitle,
+              text: this.state.chartData.title,
+              fontSize: this.state.chartOptions.titleSize
             },
             legend:{
-              display: this.props.displayLegend,
-              // position: 'right'
+              display: this.state.chartOptions.displayLegend,
+              position: this.state.chartOptions.legendPosition
             }
           }}
         />
@@ -80,18 +89,18 @@ class Chart extends Component {
     if (this.state.chartType===types.line){
       renderChart = <Line
           data={this.state.chartData}
-          width={800}
-          height={600}
+          width={this.state.chartOptions.size.width}
+          height={this.state.chartOptions.size.height}
           options={{
-            // maintainAspectRatio: false,
+            maintainAspectRatio: this.state.chartOptions.maintainAspectRatio,
             title: {
-              display: true,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
+              display: this.state.chartOptions.displayTitle,
+              text: this.state.chartData.title,
+              fontSize: this.state.chartOptions.titleSize
             },
             legend:{
-              display: true,
-              // position: 'right'
+              display: this.state.chartOptions.displayLegend,
+              position: this.state.chartOptions.legendPosition,
             }
           }}
         />
@@ -99,18 +108,18 @@ class Chart extends Component {
     if (this.state.chartType===types.doughnut){
       renderChart = <Doughnut
           data={this.state.chartData}
-          width={800}
-          height={600}
+          width={this.state.chartOptions.size.width}
+          height={this.state.chartOptions.size.height}
           options={{
-            // maintainAspectRatio: false,
+            maintainAspectRatio: this.state.chartOptions.maintainAspectRatio,
             title: {
-              display: true,
-              text: 'Ventas Por Franquicia',
-              fontSize:25
+              display: this.state.chartOptions.displayTitle,
+              text: this.state.chartData.title,
+              fontSize: this.state.chartOptions.titleSize
             },
             legend:{
-              display: true,
-              // position: 'right'
+              display: this.state.chartOptions.displayLegend,
+              position: this.state.chartOptions.legendPosition
             }
           }}
         />
@@ -118,16 +127,11 @@ class Chart extends Component {
 
 // console.log(this.state.chartData.labels.length)
     return (
-
       <div>
         {this.state.chartData.labels.length ? renderChart : null}
-        {/* {renderChart} */}
       </div>
-
     )
-
   }
-
 }
 
 export default Chart

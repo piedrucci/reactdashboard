@@ -3,9 +3,33 @@ import api from './../../shared/api'
 import Branch from './../branch'
 import utils from './../../shared/utilities'
 import ChartContainer from './../chart'
-import {types} from './../chart/chart'
+import { types, position } from './../chart/chart'
 
 const apiKey = 'bd_pos'
+
+const chartOptions1 = {
+  displayTitle: true,
+  titleSize: 16,
+  displayLegend: true,
+  legendPosition: position.bottom,
+  maintainAspectRatio: false,
+  size: {
+    width: 0,
+    height: 400
+  }
+}
+
+const chartOptions2 = {
+  displayTitle: true,
+  titleSize: 16,
+  displayLegend: true,
+  legendPosition: position.right,
+  maintainAspectRatio: false,
+  size: {
+    width: 0,
+    height: 400
+  }
+}
 
 
 class Statistic extends Component {
@@ -17,8 +41,9 @@ class Statistic extends Component {
       totalBranchs: 0,
       branchsData: [],
 
-      chartType: types.pie,
       chartData: {
+        title: '',
+
         labels:[],
         datasets:[{
           label: '',
@@ -28,11 +53,7 @@ class Statistic extends Component {
           borderWidth: 1
         }]
       },
-      chartOptions: {
-        displayTitle: true,
-        displayLegend: true,
-        legendPosition: ''
-      }
+
 
     }
   }
@@ -73,8 +94,11 @@ class Statistic extends Component {
 
              const branchElement = {
                name: item.negocio,
+               numOrders: item.num_cuentas,
+              //  avgOrder: item.ticket_prom.tofixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
+               shortName: item.negocio.substr(14, item.negocio.length),
                salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-               sales: data.totales.total
+               sales: data.totales.total.toFixed(2)
              }
 
             // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
@@ -96,12 +120,11 @@ class Statistic extends Component {
     }
 
 
-
     // CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
       showStats() {
         const data = this.state.branchsData
         let labels = []
-        let datasetsLabel= 'Resumen de Ventas'
+        let datasetsLabel= 'Ventas'
         let datasetsData = []
         let datasetsBgColor = []
         let datasetsBdColor = []
@@ -114,12 +137,13 @@ class Statistic extends Component {
           datasetsData.push(item.sales)
 
           rgba = utils.generateRGBA()
-          datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.6)' )
+          datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.4)' )
           datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
           return null
         } )
 
         const chartData = {
+          title: 'Resumen de Ventas',
           labels: labels,
           datasets:[{
             label: datasetsLabel,
@@ -130,7 +154,6 @@ class Statistic extends Component {
           }]
         }
         this.setState({chartData:chartData})
-        console.log(this.state.chartData)
       }
 
 
@@ -150,8 +173,15 @@ class Statistic extends Component {
         {/* SECCION DE IMPRESION DE LOS TOTALES VENDIDOS POR CADA SUCURSAL */}
         <div className="row">
           <div className="col-sm-2">
-            <div className="btn-group" data-toggle="buttons">
-              <button type="button" className="btn btn-info btn-lg btn-block" data-toggle="buttons" aria-pressed="false" autoComplete="off">Dia</button>
+            <div className="btn-group-vertical" data-toggle="buttons">
+              <button
+                type="button"
+                className="btn btn-info btn-lg btn-block"
+                data-toggle="buttons"
+                aria-pressed="false"
+                autoComplete="off"
+                onClick={()=>alert('dia')}
+                >Dia</button>
               <button type="button" className="btn btn-info btn-lg btn-block" data-toggle="buttons" aria-pressed="false" autoComplete="off">Semana</button>
               <button type="button" className="btn btn-info btn-lg btn-block" data-toggle="buttons" aria-pressed="false" autoComplete="off">Mes</button>
             </div>
@@ -163,23 +193,21 @@ class Statistic extends Component {
 
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
         <div className="row">
-          <div className="col-sm-3">
+          <div className="col-sm-4">
             <ChartContainer
-              chartType={this.state.chartType}
+              chartType={types.pie}
               chartData={this.state.chartData}
-              chartOptions={this.state.chartOptions}
+              chartOptions={chartOptions1}
             />
           </div>
-          <div className="col-sm-9">
+          <div className="col-sm-8">
             <ChartContainer
               chartType={types.line}
               chartData={this.state.chartData}
-              chartOptions={this.state.chartOptions}
+              chartOptions={chartOptions2}
             />
           </div>
         </div>
-
-
 
       </div>
     )
