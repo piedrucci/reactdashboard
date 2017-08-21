@@ -72,19 +72,13 @@ class Statistic extends Component {
     }
 
     // OBTENER TODAS LAS SUCURSALES
-    fetchData() {
+    async fetchData() {
       try{
-        // const res = await api.getBrachs(apiKey)
-        const res = fetch('https://testing.invucorp.com/invuApiPos/index.php?r=configuraciones/Franquicias',
-      { headers: { 'APIKEY': 'bd_pos' } }).then( (data) => {
+        const res = await api.getBrachs(apiKey)
+        const data = await res.json()
 
-        console.log(data);
-        return data.json()
-      }).then( (json) => console.log(json) )
-      // const data = await res.json()
-        // this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length});
-        // // console.log(data)
-        // this.getSalesSummary(null)
+        this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length})
+        this.getSalesSummary(null)
       }catch(err){
         console.error(err)
       }
@@ -93,7 +87,7 @@ class Statistic extends Component {
     // OBTENER TODOS LOS FIN DEL DIA POR CADA SUCURSAL
     async getSalesSummary(dates) {
        try{
-console.log(dates);
+        //  console.log(dates);
          const dateRange = (dates===null) ?
         //  FECHAS DEL DIA ANTERIOR (15-AGO)
          {
@@ -107,6 +101,7 @@ console.log(dates);
 
          // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
         //  LUEGO IMPRIMIR LOS GRAFICOS
+        let auxBranchsData = []
          await Promise.all (branchs.map(
            async (item, index) => {
             //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
@@ -122,18 +117,18 @@ console.log(dates);
                sales: data.totales.total.toFixed(2)
              }
 
-            // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
-             this.setState({
-               branchsData: [...this.state.branchsData, branchElement]
-             })
-            //  console.log(this.state.branchsData)
+            //  agregar info por cada sucursal
+             auxBranchsData.push(branchElement)
              return null
            }
+          )
          )
-         )
+
+         // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
+         this.setState({branchsData: auxBranchsData})
+         //  this.setState({branchsData: [...this.state.branchsData, branchElement]})
 
          this.showStats()
-
        }catch(err){
          alert(err)
        }
@@ -153,7 +148,7 @@ console.log(dates);
         let rgba = null
         let trimLabel = null
         data.map( (item, index) => {
-          trimLabel = item.name.substr(14, item.name.length);
+          trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
           labels.push(trimLabel)
           datasetsData.push(item.sales)
 
@@ -183,21 +178,18 @@ console.log(dates);
         const today = moment().format(utils.getDateFormat())
         const todayEpoch = utils.getEpochDate(today)
 
-        const dayOfMonth = moment().format('D')
-        const showMonth = (Math.trunc(dayOfMonth / 7)) > 0
+        // const dayOfMonth = moment().format('D')
+        // const showMonth = (Math.trunc(dayOfMonth / 7)) > 0
 
 
         switch (f) {
           case filter.day:
-            console.log('filtro en dias')
+            this.getSalesSummary(null)
             break;
           case filter.week:
             // obtener la fecha del inicio de la semana actual
             const inicioSemana = moment().day(1).format(utils.getDateFormat())
             const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
-
-            console.log(todayEpoch)
-            console.log(inicioSemanaEpoch)
 
             this.getSalesSummary({
               inicio: inicioSemanaEpoch[0],
@@ -206,15 +198,7 @@ console.log(dates);
 
             break;
           case filter.month:
-            // let arrayMonth = []
-            // for (var i = 1; i < 9; i++) {
-            //    n += i;
-            //    mifuncion(n);
-            // }
-
-            // console.log(`dia de la semana: ${moment().weekday()}`)
-            // console.log(`dia del ano: ${moment().dayOfYear()}`)
-            // console.log(`mes del ano: ${moment().month() + 1}`)
+            console.log('resumen del MES')
             break;
           default:
             break;

@@ -4,7 +4,7 @@ const endPoint = 'https://testing.invucorp.com/invuApiPos/index.php?r='
 var api =
 {
   getBrachs(apiKey) {
-    console.log(endPoint + 'configuraciones/Franquicias');
+    // console.log(endPoint + 'configuraciones/Franquicias');
     const response = fetch( endPoint + 'configuraciones/Franquicias',
                                   { headers: { 'APIKEY': apiKey } })
     return response
