@@ -12,9 +12,8 @@ class Branch extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    this.setState({
-      branchsData:nextProps.data
-    })
+    this.setState({branchsData:nextProps.data})
+    console.log(nextProps.data)
   }
 
   render() {
@@ -29,7 +28,7 @@ class Branch extends Component {
           <div key={index} className="list-group d-flex">
             <a role="button" className="list-group-item list-group-item-action flex-row align-items-start active">
               <div className="d-flex justify-content-between">
-                <span style={styles.title}>{item.name}</span>
+                <span style={styles.title}>{item.shortName}</span>
                 {/* <small>3 days ago</small> */}
               </div>
             </a>

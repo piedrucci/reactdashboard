@@ -4,10 +4,11 @@ import Branch from './../branch'
 import utils from './../../shared/utilities'
 import ChartContainer from './../chart'
 import { types, position } from './../chart/chart'
+import Progress from './../progress'
 import moment from 'moment'
 // console.log(moment.locale('es')); // es
 
-const apiKey = 'bd_pos'
+const apiKey = 'bd_lcaesarscentral'
 
 const chartOptions1 = {
   displayTitle: true,
@@ -60,6 +61,7 @@ class Statistic extends Component {
           borderWidth: 1
         }]
       },
+      isLoadingData: false,
 
     }
 
@@ -68,7 +70,7 @@ class Statistic extends Component {
   }
 
     componentDidMount() {
-      this.fetchData()
+      this.setFilterType(filter.day)
     }
 
     // OBTENER TODAS LAS SUCURSALES
@@ -78,16 +80,16 @@ class Statistic extends Component {
         const data = await res.json()
 
         this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length})
-        this.getSalesSummary(null)
+        // this.getSalesSummary(null)
       }catch(err){
         console.error(err)
       }
     }
 
-    // OBTENER TODOS LOS FIN DEL DIA POR CADA SUCURSAL
-    async getSalesSummary(dates) {
+    // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
+    async getSalesSummary(dates, filterType) {
        try{
-        //  console.log(dates);
+        //  console.log('aqui va en getSalesSummary!');
          const dateRange = (dates===null) ?
         //  FECHAS DEL DIA ANTERIOR (15-AGO)
          {
@@ -97,7 +99,8 @@ class Statistic extends Component {
          : dates
 
         //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
-         const branchs = this.state.dataList
+        await this.fetchData()
+        const branchs = this.state.dataList
 
          // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
         //  LUEGO IMPRIMIR LOS GRAFICOS
@@ -112,7 +115,8 @@ class Statistic extends Component {
                name: item.negocio,
                numOrders: item.num_cuentas,
               //  avgOrder: item.ticket_prom.tofixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-               shortName: item.negocio.substr(14, item.negocio.length),
+              //  shortName: item.negocio.substr(14, item.negocio.length),
+               shortName: ( item.negocio.trim().length > 13 ) ? item.negocio.trim().substr(14, item.negocio.length) : item.negocio.trim().substr(0, item.negocio.trim().length),
                salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
                sales: data.totales.total.toFixed(2)
              }
@@ -126,9 +130,10 @@ class Statistic extends Component {
 
          // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
          this.setState({branchsData: auxBranchsData})
+         localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
          //  this.setState({branchsData: [...this.state.branchsData, branchElement]})
 
-         this.showStats()
+         this.showStats(filterType)
        }catch(err){
          alert(err)
        }
@@ -137,7 +142,7 @@ class Statistic extends Component {
 
 
     // CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
-      showStats() {
+      showStats(filterType) {
         const data = this.state.branchsData
         let labels = []
         let datasetsLabel= 'Ventas'
@@ -169,41 +174,95 @@ class Statistic extends Component {
             borderWidth: 1
           }]
         }
-        this.setState({chartData:chartData})
+
+        switch (filterType) {
+          case filter.day:
+            localStorage.setItem(filterType, JSON.stringify(chartData))
+            break;
+          case filter.week:
+            localStorage.setItem(filterType, JSON.stringify(chartData))
+            break;
+          case filter.month:
+            localStorage.setItem(filterType, JSON.stringify(chartData))
+            break;
+          default:
+            break;
+        }
+        this.setState({
+          chartData:chartData,
+          isLoadingData:false
+        })
       }
 
 
-      setFilterType(f) {
+      async setFilterType(f) {
+        // mostrar el PROGRESSBAR mientras se cargan los datos
+        this.setState({isLoadingData:true})
+
         // obtener la fecha actual
         const today = moment().format(utils.getDateFormat())
         const todayEpoch = utils.getEpochDate(today)
 
         // const dayOfMonth = moment().format('D')
-        // const showMonth = (Math.trunc(dayOfMonth / 7)) > 0
+        // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
 
-
+        let dataLoadSuccessful = false
         switch (f) {
           case filter.day:
-            this.getSalesSummary(null)
+            dataLoadSuccessful = await this.loadLocalData(f)
+            if (!dataLoadSuccessful){
+              this.getSalesSummary(null, f)
+            }
             break;
           case filter.week:
             // obtener la fecha del inicio de la semana actual
             const inicioSemana = moment().day(1).format(utils.getDateFormat())
             const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
 
-            this.getSalesSummary({
-              inicio: inicioSemanaEpoch[0],
-              fin: todayEpoch[1]
-            })
-
+            dataLoadSuccessful = await this.loadLocalData(f)
+            if (!dataLoadSuccessful){
+              this.getSalesSummary({
+                inicio: inicioSemanaEpoch[0],
+                fin: todayEpoch[1]
+              }, f)
+            }
             break;
           case filter.month:
-            console.log('resumen del MES')
+            const currentMonth = moment().month() + 1
+            const currentYear = moment().year()
+            const strDate = currentMonth+'/1/'+currentYear
+            // const startingMonthDate = moment(strDate, utils.getDateFormat())
+            const startingMonthDateEPOCH = utils.getEpochDate(strDate)
+
+            dataLoadSuccessful = await this.loadLocalData(f)
+            if (!dataLoadSuccessful){
+              this.getSalesSummary({
+                inicio: startingMonthDateEPOCH[0],
+                fin: todayEpoch[1]
+              }, f)
+            }
             break;
           default:
             break;
         }
       }
+
+  async loadLocalData(filterType) {
+    const cachedData = await localStorage.getItem(filterType)
+    const cachedBranchsData = await localStorage.getItem(`${filterType}BranchsData`)
+
+    if (cachedData) {
+      this.setState({
+        chartData:JSON.parse(cachedData),
+        branchsData: JSON.parse(cachedBranchsData),
+        isLoadingData:false,
+      })
+      return true
+    }else{
+      return false
+    }
+    // console.log(this.state.branchsData)
+  }
 
 
   render() {
@@ -250,27 +309,35 @@ class Statistic extends Component {
             </div>
           </div>
           <div className="col-sm-10">
-            <Branch data={this.state.branchsData} />
+            {
+              this.state.isLoadingData
+              ? <Progress visible={true} />
+              : <Branch data={this.state.branchsData} />
+            }
           </div>
         </div>
 
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
-        <div className="row">
-          <div className="col-sm-4">
-            <ChartContainer
-              chartType={types.pie}
-              chartData={this.state.chartData}
-              chartOptions={chartOptions1}
-            />
-          </div>
-          <div className="col-sm-8">
-            <ChartContainer
-              chartType={types.line}
-              chartData={this.state.chartData}
-              chartOptions={chartOptions2}
-            />
-          </div>
+        {/* {
+          !this.state.isLoadingData
+          ? */}
+        <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}>
+                <div className="col-sm-4">
+                  <ChartContainer
+                    chartType={types.pie}
+                    chartData={this.state.chartData}
+                    chartOptions={chartOptions1}
+                  />
+                </div>
+                <div className="col-sm-8">
+                  <ChartContainer
+                    chartType={types.line}
+                    chartData={this.state.chartData}
+                    chartOptions={chartOptions2}
+                  />
+                </div>
         </div>
+
 
       </div>
     )
