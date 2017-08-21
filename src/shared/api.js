@@ -1,5 +1,6 @@
 
-const endPoint = 'https://testing.invucorp.com/invuApiPos/index.php?r='
+// const endPoint = 'https://testing.invucorp.com/invuApiPos/index.php?r='
+const endPoint = 'https://api.invupos.com/invuApiPos/index.php?r='
 
 var api =
 {

@@ -8,7 +8,7 @@ import Progress from './../progress'
 import moment from 'moment'
 // console.log(moment.locale('es')); // es
 
-const apiKey = 'bd_pos'
+const apiKey = 'bd_lcaesarscentral'
 
 const chartOptions1 = {
   displayTitle: true,
@@ -250,10 +250,6 @@ class Statistic extends Component {
   async loadLocalData(filterType) {
     const cachedData = await localStorage.getItem(filterType)
     const cachedBranchsData = await localStorage.getItem(`${filterType}BranchsData`)
-    // console.log(JSON.parse(cachedData))
-    console.log(JSON.parse(cachedBranchsData))
-
-
 
     if (cachedData) {
       this.setState({
