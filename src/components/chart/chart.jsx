@@ -26,9 +26,6 @@ class Chart extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    // console.log(nextProps.chartType)
-    // console.log(nextProps.chartData)
-    // console.log(nextProps.chartOptions)
     this.setState({
       chartType:nextProps.chartType,
       chartData:nextProps.chartData,
