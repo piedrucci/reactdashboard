@@ -8,7 +8,8 @@ import Progress from './../progress'
 import moment from 'moment'
 // console.log(moment.locale('es')); // es
 
-const apiKey = 'bd_lcaesarscentral'
+// const apiKey = 'bd_lcaesarscentral'
+const apiKey = 'bd_yogencentral2pos'
 
 const chartOptions1 = {
   displayTitle: true,
@@ -61,8 +62,9 @@ class Statistic extends Component {
           borderWidth: 1
         }]
       },
-      isLoadingData: false,
-
+      isLoadingData: true,
+      showRefreshIcon: true,
+      chartFilter: filter.day,
     }
 
     this.setFilterType = this.setFilterType.bind(this)
@@ -90,13 +92,6 @@ class Statistic extends Component {
     async getSalesSummary(dates, filterType) {
        try{
         //  console.log('aqui va en getSalesSummary!');
-         const dateRange = (dates===null) ?
-        //  FECHAS DEL DIA ANTERIOR (15-AGO)
-         {
-           inicio: 1502755200,
-           fin: 1502841599,
-         }
-         : dates
 
         //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
         await this.fetchData()
@@ -108,7 +103,7 @@ class Statistic extends Component {
          await Promise.all (branchs.map(
            async (item, index) => {
             //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
-             const res = await api.getFinDiaFechas(dateRange, item.APIKEY)
+             const res = await api.getFinDiaFechas(dates, item.APIKEY)
              const data = await res.json()
 
              const branchElement = {
@@ -175,6 +170,7 @@ class Statistic extends Component {
           }]
         }
 
+        // cachear los datos en localStorage
         switch (filterType) {
           case filter.day:
             localStorage.setItem(filterType, JSON.stringify(chartData))
@@ -188,6 +184,7 @@ class Statistic extends Component {
           default:
             break;
         }
+        console.log('finalizacion de la carga en segundo plano...')
         this.setState({
           chartData:chartData,
           isLoadingData:false
@@ -197,35 +194,42 @@ class Statistic extends Component {
 
       async setFilterType(f) {
         // mostrar el PROGRESSBAR mientras se cargan los datos
-        this.setState({isLoadingData:true})
+        this.setState({
+          isLoadingData:true,
+          showRefreshIcon:true,
+          chartFilter: f
+        })
 
         // obtener la fecha actual
         const today = moment().format(utils.getDateFormat())
         const todayEpoch = utils.getEpochDate(today)
-
         // const dayOfMonth = moment().format('D')
         // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
 
         let dataLoadSuccessful = false
         switch (f) {
           case filter.day:
-            dataLoadSuccessful = await this.loadLocalData(f)
-            if (!dataLoadSuccessful){
-              this.getSalesSummary(null, f)
-            }
+            // dataLoadSuccessful = await this.loadLocalData(f)
+            await this.loadLocalData(f)
+            // if (!dataLoadSuccessful){
+            // }
+            await this.getSalesSummary({
+              inicio: 1503273600,
+              fin: 1503359999
+              // inicio: todayEpoch[0],
+              // fin: todayEpoch[1]
+            }, f)
             break;
           case filter.week:
             // obtener la fecha del inicio de la semana actual
             const inicioSemana = moment().day(1).format(utils.getDateFormat())
             const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
 
-            dataLoadSuccessful = await this.loadLocalData(f)
-            if (!dataLoadSuccessful){
-              this.getSalesSummary({
+            await this.loadLocalData(f)
+            await this.getSalesSummary({
                 inicio: inicioSemanaEpoch[0],
                 fin: todayEpoch[1]
-              }, f)
-            }
+            }, f)
             break;
           case filter.month:
             const currentMonth = moment().month() + 1
@@ -234,17 +238,16 @@ class Statistic extends Component {
             // const startingMonthDate = moment(strDate, utils.getDateFormat())
             const startingMonthDateEPOCH = utils.getEpochDate(strDate)
 
-            dataLoadSuccessful = await this.loadLocalData(f)
-            if (!dataLoadSuccessful){
-              this.getSalesSummary({
-                inicio: startingMonthDateEPOCH[0],
-                fin: todayEpoch[1]
-              }, f)
-            }
+            await this.loadLocalData(f)
+            await this.getSalesSummary({
+              inicio: startingMonthDateEPOCH[0],
+              fin: todayEpoch[1]
+            }, f)
             break;
           default:
             break;
         }
+        this.setState({showRefreshIcon:false})
       }
 
   async loadLocalData(filterType) {
@@ -257,19 +260,22 @@ class Statistic extends Component {
         branchsData: JSON.parse(cachedBranchsData),
         isLoadingData:false,
       })
-      return true
-    }else{
-      return false
+      // return true
     }
+    // else{
+    //   return false
+    // }
     // console.log(this.state.branchsData)
   }
 
 
   render() {
 
+    // para mostrar el icono del spinner mientras hace la carga en segundo plano...
+    const refreshingData = (this.state.showRefreshIcon)?<i className="fa fa-refresh fa-spin" style={styles.fontSpinner}></i>:null
+
     return (
       <div className="container">
-        {/* <div className="row justify-content-md-center"> */}
 
         {/* BARRA SUPERIOR */}
         <div className="row" >
@@ -289,7 +295,10 @@ class Statistic extends Component {
                 aria-pressed="false"
                 autoComplete="off"
                 onClick={()=>this.setFilterType(filter.day)}
-                >Dia</button>
+                >
+                  Dia &nbsp;&nbsp;&nbsp;
+                  { (this.state.chartFilter===filter.day)?refreshingData:null}
+              </button>
               <button
                 type="button"
                 className="btn btn-info btn-lg btn-block"
@@ -297,7 +306,10 @@ class Statistic extends Component {
                 aria-pressed="false"
                 autoComplete="off"
                 onClick={()=>this.setFilterType(filter.week)}
-                >Semana</button>
+                >
+                  Semana &nbsp;
+                  { (this.state.chartFilter===filter.week)?refreshingData:null}
+                </button>
               <button
                 type="button"
                 className="btn btn-info btn-lg btn-block"
@@ -305,7 +317,8 @@ class Statistic extends Component {
                 aria-pressed="false"
                 autoComplete="off"
                 onClick={()=>this.setFilterType(filter.month)}
-                >Mes</button>
+                >Mes &nbsp;
+                { (this.state.chartFilter===filter.month)?refreshingData:null}</button>
             </div>
           </div>
           <div className="col-sm-10">
@@ -318,27 +331,22 @@ class Statistic extends Component {
         </div>
 
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
-        {/* {
-          !this.state.isLoadingData
-          ? */}
         <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}>
-                <div className="col-sm-4">
-                  <ChartContainer
-                    chartType={types.pie}
-                    chartData={this.state.chartData}
-                    chartOptions={chartOptions1}
-                  />
-                </div>
-                <div className="col-sm-8">
-                  <ChartContainer
-                    chartType={types.line}
-                    chartData={this.state.chartData}
-                    chartOptions={chartOptions2}
-                  />
-                </div>
+          <div className="col-sm-4">
+            <ChartContainer
+              chartType={types.pie}
+              chartData={this.state.chartData}
+              chartOptions={chartOptions1}
+            />
+          </div>
+          <div className="col-sm-8">
+            <ChartContainer
+              chartType={types.line}
+              chartData={this.state.chartData}
+              chartOptions={chartOptions2}
+            />
+          </div>
         </div>
-
-
       </div>
     )
   }
@@ -350,5 +358,8 @@ const styles = {
   title: {
     fontWeight: 'bold',
     fontSize: '2em'
+  },
+  fontSpinner: {
+    fontSize: 18
   }
 }

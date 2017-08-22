@@ -13,7 +13,6 @@ class Branch extends Component {
 
   componentWillReceiveProps(nextProps) {
     this.setState({branchsData:nextProps.data})
-    console.log(nextProps.data)
   }
 
   render() {
