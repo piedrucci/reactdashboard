@@ -8,8 +8,8 @@ import Progress from './../progress'
 import moment from 'moment'
 // console.log(moment.locale('es')); // es
 
-// const apiKey = 'bd_lcaesarscentral'
-const apiKey = 'bd_yogencentral2pos'
+const apiKey = 'bd_lcaesarscentral'
+// const apiKey = 'bd_yogencentral2pos'
 
 const chartOptions1 = {
   displayTitle: true,
@@ -206,28 +206,26 @@ class Statistic extends Component {
         // const dayOfMonth = moment().format('D')
         // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
 
-        let dataLoadSuccessful = false
         switch (f) {
           case filter.day:
-            // dataLoadSuccessful = await this.loadLocalData(f)
             await this.loadLocalData(f)
-            // if (!dataLoadSuccessful){
-            // }
             await this.getSalesSummary({
-              inicio: 1503273600,
-              fin: 1503359999
-              // inicio: todayEpoch[0],
-              // fin: todayEpoch[1]
+              // inicio: 1503273600,
+              // fin: 1503359999
+              inicio: todayEpoch[0],
+              fin: todayEpoch[1]
             }, f)
             break;
           case filter.week:
             // obtener la fecha del inicio de la semana actual
-            const inicioSemana = moment().day(1).format(utils.getDateFormat())
-            const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
+            // const inicioSemana = moment().day(1).format(utils.getDateFormat())
+            // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
+            const lastWeek = moment().subtract(7, 'day');
+            const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
 
             await this.loadLocalData(f)
             await this.getSalesSummary({
-                inicio: inicioSemanaEpoch[0],
+                inicio: lastWeekEpoch[0],
                 fin: todayEpoch[1]
             }, f)
             break;

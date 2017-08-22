@@ -48,7 +48,7 @@ class Branch extends Component {
     )
     return (
       <div>
-        <div className="d-flex flex-row">
+        <div className="d-flex p-2 flex-row flex-wrap">
           {
             this.state.branchsData.length
             ? sucs
