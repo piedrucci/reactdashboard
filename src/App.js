@@ -3,7 +3,7 @@ import Header from './components/header'
 import Main from './components/main'
 
 const App = () => (
-  <div style={{backgroundColor:'#F8F8F8'}}>
+  <div style={{backgroundColor:'#eef2f6'}}>
     <Header />
     <Main />
   </div>
