@@ -6,6 +6,7 @@ import ChartContainer from './../chart'
 import { types, position } from './../chart/chart'
 import Progress from './../progress'
 import moment from 'moment'
+import {color} from './../../shared/styles'
 // console.log(moment.locale('es')); // es
 
 const apiKey = 'bd_lcaesarscentral'
@@ -260,10 +261,7 @@ class Statistic extends Component {
       })
       // return true
     }
-    // else{
-    //   return false
-    // }
-    // console.log(this.state.branchsData)
+
   }
 
 
@@ -278,13 +276,27 @@ class Statistic extends Component {
         {/* BARRA SUPERIOR */}
         <div className="row" >
           <div className="col-sm-12">
-            <div className="alert alert-info" ><span style={styles.title}>Little Caesars</span></div>
+            <div className="alert " style={styles.titleContainer} ><span style={styles.title}>Little Caesars</span></div>
           </div>
         </div>
 
         {/* SECCION DE IMPRESION DE LOS TOTALES VENDIDOS POR CADA SUCURSAL */}
         <div className="row">
           <div className="col-sm-2">
+
+
+            {/* <div className="info-box">
+              <span className="info-box-icon bg-aqua"><i className="fa fa-envelope-o"></i></span>
+
+              <div className="info-box-content">
+                <span className="info-box-text">Messages</span>
+                <span className="info-box-number">1,410</span>
+              </div>
+
+            </div> */}
+
+
+
             <div className="btn-group-vertical" data-toggle="buttons">
               <button
                 type="button"
@@ -356,6 +368,10 @@ const styles = {
   title: {
     fontWeight: 'bold',
     fontSize: '2em'
+  },
+  titleContainer: {
+    backgroundColor: color.primary,
+    color: '#ffffff'
   },
   fontSpinner: {
     fontSize: 18

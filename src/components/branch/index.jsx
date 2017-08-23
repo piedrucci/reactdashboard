@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import {color} from './../../shared/styles'
 
 class Branch extends Component {
 
@@ -25,7 +26,7 @@ class Branch extends Component {
         <div key={index} className="p-1">
 
           <div key={index} className="list-group d-flex">
-            <a role="button" className="list-group-item list-group-item-action flex-row align-items-start active">
+            <a role="button" style={styles.loadingMessage} className="list-group-item list-group-item-action flex-row align-items-start active">
               <div className="d-flex justify-content-between">
                 <span style={styles.title}>{item.shortName}</span>
                 {/* <small>3 days ago</small> */}
@@ -52,7 +53,7 @@ class Branch extends Component {
           {
             this.state.branchsData.length
             ? sucs
-            : <div className="alert alert-info .text-center" role="alert">
+            : <div className="alert text-center" style={styles.loadingMessage} role="alert">
                 Espere .... obteniendo datos desde el servidor...
               </div>
           }
@@ -69,6 +70,10 @@ const styles = {
   title: {
     color: 'white',
     fontWeight: 'bold'
+  },
+  loadingMessage: {
+    // color: '#ffffff',
+    backgroundColor: color.primary2
   },
   salesLabel: {
     // color: '#999999',
