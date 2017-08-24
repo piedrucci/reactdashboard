@@ -7,7 +7,8 @@ import { types, position } from './../chart/chart'
 import Progress from './../progress'
 import moment from 'moment'
 import {color} from './../../shared/styles'
-// console.log(moment.locale('es')); // es
+
+const alasql = window.alasql;
 
 const apiKey = 'bd_lcaesarscentral'
 // const apiKey = 'bd_yogencentral2pos'
@@ -72,182 +73,182 @@ class Statistic extends Component {
 
   }
 
-    componentDidMount() {
-      this.setFilterType(filter.day)
+  componentDidMount() {
+    this.setFilterType(filter.day)
+  }
+
+  // OBTENER TODAS LAS SUCURSALES
+  async fetchData() {
+    try{
+      const res = await api.getBrachs(apiKey)
+      const data = await res.json()
+
+      this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length})
+      // this.getSalesSummary(null)
+    }catch(err){
+      console.error(err)
     }
+  }
 
-    // OBTENER TODAS LAS SUCURSALES
-    async fetchData() {
-      try{
-        const res = await api.getBrachs(apiKey)
-        const data = await res.json()
+  // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
+  async getSalesSummary(dates, filterType) {
+    try{
+      //  console.log('aqui va en getSalesSummary!');
 
-        this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length})
-        // this.getSalesSummary(null)
-      }catch(err){
-        console.error(err)
-      }
-    }
+      //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
+      await this.fetchData()
+      const branchs = this.state.dataList
 
-    // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
-    async getSalesSummary(dates, filterType) {
-       try{
-        //  console.log('aqui va en getSalesSummary!');
+      // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
+      //  LUEGO IMPRIMIR LOS GRAFICOS
+      let auxBranchsData = []
+      await Promise.all (branchs.map(
+        async (item, index) => {
+          //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
+          const res = await api.getFinDiaFechas(dates, item.APIKEY)
+          const data = await res.json()
 
-        //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
-        await this.fetchData()
-        const branchs = this.state.dataList
+          const branchElement = {
+            name: item.negocio,
+            numOrders: item.num_cuentas,
+            //  avgOrder: item.ticket_prom.tofixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
+            //  shortName: item.negocio.substr(14, item.negocio.length),
+            shortName: ( item.negocio.trim().length > 13 ) ? item.negocio.trim().substr(14, item.negocio.length) : item.negocio.trim().substr(0, item.negocio.trim().length),
+            salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
+            sales: data.totales.total.toFixed(2)
+          }
 
-         // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
-        //  LUEGO IMPRIMIR LOS GRAFICOS
-        let auxBranchsData = []
-         await Promise.all (branchs.map(
-           async (item, index) => {
-            //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
-             const res = await api.getFinDiaFechas(dates, item.APIKEY)
-             const data = await res.json()
-
-             const branchElement = {
-               name: item.negocio,
-               numOrders: item.num_cuentas,
-              //  avgOrder: item.ticket_prom.tofixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-              //  shortName: item.negocio.substr(14, item.negocio.length),
-               shortName: ( item.negocio.trim().length > 13 ) ? item.negocio.trim().substr(14, item.negocio.length) : item.negocio.trim().substr(0, item.negocio.trim().length),
-               salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-               sales: data.totales.total.toFixed(2)
-             }
-
-            //  agregar info por cada sucursal
-             auxBranchsData.push(branchElement)
-             return null
-           }
-          )
-         )
-
-         // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
-         this.setState({branchsData: auxBranchsData})
-         localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
-         //  this.setState({branchsData: [...this.state.branchsData, branchElement]})
-
-         this.showStats(filterType)
-       }catch(err){
-         alert(err)
-       }
-
-    }
-
-
-    // CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
-      showStats(filterType) {
-        const data = this.state.branchsData
-        let labels = []
-        let datasetsLabel= 'Ventas'
-        let datasetsData = []
-        let datasetsBgColor = []
-        let datasetsBdColor = []
-
-        let rgba = null
-        let trimLabel = null
-        data.map( (item, index) => {
-          trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
-          labels.push(trimLabel)
-          datasetsData.push(item.sales)
-
-          rgba = utils.generateRGBA()
-          datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.4)' )
-          datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
+          //  agregar info por cada sucursal
+          auxBranchsData.push(branchElement)
           return null
-        } )
-
-        const chartData = {
-          title: 'Resumen de Ventas',
-          labels: labels,
-          datasets:[{
-            label: datasetsLabel,
-            data: datasetsData,
-            backgroundColor: datasetsBgColor,
-            borderColor: datasetsBdColor,
-            borderWidth: 1
-          }]
         }
+      )
+    )
 
-        // cachear los datos en localStorage
-        switch (filterType) {
-          case filter.day:
-            localStorage.setItem(filterType, JSON.stringify(chartData))
-            break;
-          case filter.week:
-            localStorage.setItem(filterType, JSON.stringify(chartData))
-            break;
-          case filter.month:
-            localStorage.setItem(filterType, JSON.stringify(chartData))
-            break;
-          default:
-            break;
-        }
-        console.log('finalizacion de la carga en segundo plano...')
-        this.setState({
-          chartData:chartData,
-          isLoadingData:false
-        })
-      }
+    // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
+    this.setState({branchsData: auxBranchsData})
+    localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
+    //  this.setState({branchsData: [...this.state.branchsData, branchElement]})
+
+    this.showStats(filterType)
+  }catch(err){
+    alert(err)
+  }
+
+}
 
 
-      async setFilterType(f) {
-        // mostrar el PROGRESSBAR mientras se cargan los datos
-        this.setState({
-          isLoadingData:true,
-          showRefreshIcon:true,
-          chartFilter: f
-        })
+// CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
+showStats(filterType) {
+  const data = this.state.branchsData
+  let labels = []
+  let datasetsLabel= 'Ventas'
+  let datasetsData = []
+  let datasetsBgColor = []
+  let datasetsBdColor = []
 
-        // obtener la fecha actual
-        const today = moment().format(utils.getDateFormat())
-        const todayEpoch = utils.getEpochDate(today)
-        // const dayOfMonth = moment().format('D')
-        // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
+  let rgba = null
+  let trimLabel = null
+  data.map( (item, index) => {
+    trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
+    labels.push(trimLabel)
+    datasetsData.push(item.sales)
 
-        switch (f) {
-          case filter.day:
-            await this.loadLocalData(f)
-            await this.getSalesSummary({
-              // inicio: 1503273600,
-              // fin: 1503359999
-              inicio: todayEpoch[0],
-              fin: todayEpoch[1]
-            }, f)
-            break;
-          case filter.week:
-            // obtener la fecha del inicio de la semana actual
-            // const inicioSemana = moment().day(1).format(utils.getDateFormat())
-            // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
-            const lastWeek = moment().subtract(7, 'day');
-            const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
+    rgba = utils.generateRGBA()
+    datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.4)' )
+    datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
+    return null
+  } )
 
-            await this.loadLocalData(f)
-            await this.getSalesSummary({
-                inicio: lastWeekEpoch[0],
-                fin: todayEpoch[1]
-            }, f)
-            break;
-          case filter.month:
-            const currentMonth = moment().month() + 1
-            const currentYear = moment().year()
-            const strDate = currentMonth+'/1/'+currentYear
-            // const startingMonthDate = moment(strDate, utils.getDateFormat())
-            const startingMonthDateEPOCH = utils.getEpochDate(strDate)
+  const chartData = {
+    title: 'Resumen de Ventas',
+    labels: labels,
+    datasets:[{
+      label: datasetsLabel,
+      data: datasetsData,
+      backgroundColor: datasetsBgColor,
+      borderColor: datasetsBdColor,
+      borderWidth: 1
+    }]
+  }
 
-            await this.loadLocalData(f)
-            await this.getSalesSummary({
-              inicio: startingMonthDateEPOCH[0],
-              fin: todayEpoch[1]
-            }, f)
-            break;
-          default:
-            break;
-        }
-        this.setState({showRefreshIcon:false})
-      }
+  // cachear los datos en localStorage
+  switch (filterType) {
+    case filter.day:
+    localStorage.setItem(filterType, JSON.stringify(chartData))
+    break;
+    case filter.week:
+    localStorage.setItem(filterType, JSON.stringify(chartData))
+    break;
+    case filter.month:
+    localStorage.setItem(filterType, JSON.stringify(chartData))
+    break;
+    default:
+    break;
+  }
+  console.log('finalizacion de la carga en segundo plano...')
+  this.setState({
+    chartData:chartData,
+    isLoadingData:false
+  })
+}
+
+
+async setFilterType(f) {
+  // mostrar el PROGRESSBAR mientras se cargan los datos
+  this.setState({
+    isLoadingData:true,
+    showRefreshIcon:true,
+    chartFilter: f
+  })
+
+  // obtener la fecha actual
+  const today = moment().format(utils.getDateFormat())
+  const todayEpoch = utils.getEpochDate(today)
+  // const dayOfMonth = moment().format('D')
+  // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
+
+  switch (f) {
+    case filter.day:
+    await this.loadLocalData(f)
+    await this.getSalesSummary({
+      // inicio: 1503273600,
+      // fin: 1503359999
+      inicio: todayEpoch[0],
+      fin: todayEpoch[1]
+    }, f)
+    break;
+    case filter.week:
+    // obtener la fecha del inicio de la semana actual
+    // const inicioSemana = moment().day(1).format(utils.getDateFormat())
+    // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
+    const lastWeek = moment().subtract(7, 'day');
+    const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
+
+    await this.loadLocalData(f)
+    await this.getSalesSummary({
+      inicio: lastWeekEpoch[0],
+      fin: todayEpoch[1]
+    }, f)
+    break;
+    case filter.month:
+    const currentMonth = moment().month() + 1
+    const currentYear = moment().year()
+    const strDate = currentMonth+'/1/'+currentYear
+    // const startingMonthDate = moment(strDate, utils.getDateFormat())
+    const startingMonthDateEPOCH = utils.getEpochDate(strDate)
+
+    await this.loadLocalData(f)
+    await this.getSalesSummary({
+      inicio: startingMonthDateEPOCH[0],
+      fin: todayEpoch[1]
+    }, f)
+    break;
+    default:
+    break;
+  }
+  this.setState({showRefreshIcon:false})
+}
 
   async loadLocalData(filterType) {
     const cachedData = await localStorage.getItem(filterType)
@@ -264,7 +265,18 @@ class Statistic extends Component {
 
   }
 
-
+  exportData = () => {
+    // const data1 = [{Sucursal:1,Ventas:10},{Sucursal:2,Ventas:20}];
+    let data1 = []
+    this.state.branchsData.map( (item, index) => data1.push(item) )
+    const opts = [
+      {
+        sheetid:'Data',
+        header:true
+      }
+    ];
+    const res = alasql('SELECT * INTO XLSX("summary.xlsx",?) FROM ?', [opts,[data1]]);
+  }
   render() {
 
     // para mostrar el icono del spinner mientras hace la carga en segundo plano...
@@ -297,10 +309,10 @@ class Statistic extends Component {
 
 
 
-            <div className="btn-group-vertical" data-toggle="buttons">
+            <div className="btn-group-vertical btn-block" data-toggle="buttons">
               <button
                 type="button"
-                className="btn btn-info btn-lg btn-block"
+                className="btn btn-info btn-lg"
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -311,7 +323,7 @@ class Statistic extends Component {
               </button>
               <button
                 type="button"
-                className="btn btn-info btn-lg btn-block"
+                className="btn btn-info btn-lg"
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -322,7 +334,7 @@ class Statistic extends Component {
                 </button>
               <button
                 type="button"
-                className="btn btn-info btn-lg btn-block"
+                className="btn btn-info btn-lg"
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -330,6 +342,10 @@ class Statistic extends Component {
                 >Mes &nbsp;
                 { (this.state.chartFilter===filter.month)?refreshingData:null}</button>
             </div>
+            <button type='button' className="btn btn-success btn-block" onClick={()=>this.exportData()}>
+              <i className="fa fa-file-excel-o" aria-hidden="true"></i> &nbsp;&nbsp;&nbsp;
+              Export
+            </button>
           </div>
           <div className="col-sm-10">
             {
