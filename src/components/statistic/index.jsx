@@ -286,11 +286,11 @@ async setFilterType(f) {
       <div className="container">
 
         {/* BARRA SUPERIOR */}
-        <div className="row" >
+        {/* <div className="row" >
           <div className="col-sm-12">
             <div className="alert " style={styles.titleContainer} ><span style={styles.title}>Little Caesars</span></div>
           </div>
-        </div>
+        </div> */}
 
         {/* SECCION DE IMPRESION DE LOS TOTALES VENDIDOS POR CADA SUCURSAL */}
         <div className="row">
