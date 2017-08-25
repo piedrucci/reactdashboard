@@ -30,7 +30,7 @@ class Branch extends Component {
               <div className="d-flex justify-content-between">
                 <span style={styles.title}>{item.shortName}</span>
                 {/* <small>3 days ago</small> */}
-                <span className="badge badge-primary">{item.numOrders}</span>
+                <span className="badge badge-light">Tickets: {item.numOrders}</span>
               </div>
             </a>
             <a role="button" className="list-group-item list-group-item-action flex-row align-items-start">
