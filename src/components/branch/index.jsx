@@ -30,13 +30,13 @@ class Branch extends Component {
               <div className="d-flex justify-content-between">
                 <span style={styles.title}>{item.shortName}</span>
                 {/* <small>3 days ago</small> */}
+                <span className="badge badge-primary">{item.numOrders}</span>
               </div>
             </a>
             <a role="button" className="list-group-item list-group-item-action flex-row align-items-start">
               <div className="d-flex justify-content-between" >
                 <h5 className="mb-1"> <span style={styles.salesLabel}>${item.salesformatted}</span></h5>
-                {/* <span className={styles.salesLabel}>$</span> */}
-                {/* <small className="text-muted">3 days ago</small> */}
+                <small className="text-muted">Avg: ${item.avgOrders}</small>
               </div>
             </a>
 

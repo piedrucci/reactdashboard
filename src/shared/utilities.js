@@ -23,7 +23,23 @@ var utils =
       (epochStartingDate / 1000),
       (epochEndingDate / 1000)
     ]
-  }
+  },
+
+// obtiene los parametros desde SESSION-STORAGE para hacer las peticiones a la API
+  getSessionParams() {
+    const params = sessionStorage.getItem('json')
+    return JSON.parse(params)
+    // return params
+  },
+
+  initializeParams() {
+    sessionStorage.setItem('json', JSON.stringify({
+        APIKEY:'bd_lcaesarscentral',
+        API: 'https://api.invupos.com/invuApiPos/index.php?r=',
+        NOMBREF: 'Little Caesars'
+      })
+    )
+  },
 }
 
 export default utils

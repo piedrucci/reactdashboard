@@ -10,8 +10,6 @@ import {color} from './../../shared/styles'
 
 const alasql = window.alasql;
 
-const apiKey = 'bd_lcaesarscentral'
-// const apiKey = 'bd_yogencentral2pos'
 
 const chartOptions1 = {
   displayTitle: true,
@@ -48,10 +46,18 @@ class Statistic extends Component {
   constructor() {
     super()
     this.state = {
+      // parametros necesarios para conectarse a la API
+      params: '',
+
       dataList: [],
+
+      // total de sucursales
       totalBranchs: 0,
+
+      // informacion consolidada para enviarla al componente Branch
       branchsData: [],
 
+      // info para enviar al componente que muestra el grafico
       chartData: {
         title: '',
 
@@ -64,6 +70,7 @@ class Statistic extends Component {
           borderWidth: 1
         }]
       },
+
       isLoadingData: true,
       showRefreshIcon: true,
       chartFilter: filter.day,
@@ -73,21 +80,82 @@ class Statistic extends Component {
 
   }
 
-  componentDidMount() {
-    this.setFilterType(filter.day)
+  componentWillMount() {
   }
 
-  // OBTENER TODAS LAS SUCURSALES
-  async fetchData() {
-    try{
-      const res = await api.getBrachs(apiKey)
-      const data = await res.json()
+  componentDidMount() {
+    this.loadSessionParams()
+    this.setFilterType(filter.day)
 
-      this.setState({dataList: data.franquicias, totalBranchs: data.franquicias.length})
-      // this.getSalesSummary(null)
-    }catch(err){
-      console.error(err)
+    // console.log(this.props.location.pathname)
+  }
+
+  async loadSessionParams() {
+    let _params = await utils.getSessionParams()
+
+    // en caso de que no existan datos, usar por defecto
+    if ( _params === null ){
+      await utils.initializeParams()
+      _params = await utils.getSessionParams()
     }
+    api.setEndPoint(_params.API)
+    this.setState({params: _params })
+  }
+
+  async setFilterType(f) {
+    // mostrar el PROGRESSBAR mientras se cargan los datos
+    this.setState({
+      isLoadingData:true,
+      showRefreshIcon:true,
+      chartFilter: f
+    })
+
+    // obtener la fecha actual
+    const today = moment().format(utils.getDateFormat())
+    const todayEpoch = utils.getEpochDate(today)
+    // const dayOfMonth = moment().format('D')
+    // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
+
+    switch (f) {
+      case filter.day:
+        await this.loadLocalData(f)
+        await this.getSalesSummary({
+          // inicio: 1503273600,
+          // fin: 1503359999
+          inicio: todayEpoch[0],
+          fin: todayEpoch[1]
+        }, f)
+        break;
+      case filter.week:
+        // obtener la fecha del inicio de la semana actual
+        // const inicioSemana = moment().day(1).format(utils.getDateFormat())
+        // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
+        const lastWeek = moment().subtract(7, 'day');
+        const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
+
+        await this.loadLocalData(f)
+        await this.getSalesSummary({
+          inicio: lastWeekEpoch[0],
+          fin: todayEpoch[1]
+        }, f)
+        break;
+      case filter.month:
+        const currentMonth = moment().month() + 1
+        const currentYear = moment().year()
+        const strDate = currentMonth+'/1/'+currentYear
+        // const startingMonthDate = moment(strDate, utils.getDateFormat())
+        const startingMonthDateEPOCH = utils.getEpochDate(strDate)
+
+        await this.loadLocalData(f)
+        await this.getSalesSummary({
+          inicio: startingMonthDateEPOCH[0],
+          fin: todayEpoch[1]
+        }, f)
+        break;
+      default:
+      break;
+    }
+    this.setState({showRefreshIcon:false})
   }
 
   // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
@@ -96,28 +164,36 @@ class Statistic extends Component {
       //  console.log('aqui va en getSalesSummary!');
 
       //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
-      await this.fetchData()
-      const branchs = this.state.dataList
+      let baseBranchs = this.state.dataList
+      if (this.state.dataList.length === 0){
+        await this.fetchData()
+        baseBranchs = this.state.branchsData
+      }
+
+      const branchs = baseBranchs
+      // branchs = branchs.sort()
+      console.log('en getSalesSummary: ',branchs);
 
       // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
       //  LUEGO IMPRIMIR LOS GRAFICOS
       let auxBranchsData = []
       await Promise.all (branchs.map(
         async (item, index) => {
+          // console.log(item);
           //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
           const res = await api.getFinDiaFechas(dates, item.APIKEY)
           const data = await res.json()
 
           const branchElement = {
             name: item.negocio,
-            numOrders: item.num_cuentas,
-            //  avgOrder: item.ticket_prom.tofixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-            //  shortName: item.negocio.substr(14, item.negocio.length),
+            numOrders: data.totales.num_cuentas,
+            avgOrders: data.totales.ticket_prom.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
             shortName: ( item.negocio.trim().length > 13 ) ? item.negocio.trim().substr(14, item.negocio.length) : item.negocio.trim().substr(0, item.negocio.trim().length),
             salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
             sales: data.totales.total.toFixed(2)
           }
 
+          console.log(`${this.state.dataList[index].negocio} - ${branchElement.name}`)
           //  agregar info por cada sucursal
           auxBranchsData.push(branchElement)
           return null
@@ -125,6 +201,7 @@ class Statistic extends Component {
       )
     )
 
+console.log('auxBranchsData: ',auxBranchsData)
     // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
     this.setState({branchsData: auxBranchsData})
     localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
@@ -136,6 +213,28 @@ class Statistic extends Component {
   }
 
 }
+
+  // OBTENER TODAS LAS SUCURSALES
+  async fetchData() {
+    try{
+      const res = await api.getBrachs(this.state.params.APIKEY)
+      const data = await res.json()
+
+      const totalBranchs = data.franquicias.length
+
+      if ( totalBranchs < 1 ) {
+        alert('NO hay suscursales para mostrar...')
+      }
+
+      this.setState({
+        dataList: data.franquicias,
+        branchsData: data.franquicias,
+        totalBranchs: totalBranchs
+      })
+    }catch(err){
+      console.error(err)
+    }
+  }
 
 
 // CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
@@ -194,61 +293,6 @@ showStats(filterType) {
 }
 
 
-async setFilterType(f) {
-  // mostrar el PROGRESSBAR mientras se cargan los datos
-  this.setState({
-    isLoadingData:true,
-    showRefreshIcon:true,
-    chartFilter: f
-  })
-
-  // obtener la fecha actual
-  const today = moment().format(utils.getDateFormat())
-  const todayEpoch = utils.getEpochDate(today)
-  // const dayOfMonth = moment().format('D')
-  // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
-
-  switch (f) {
-    case filter.day:
-    await this.loadLocalData(f)
-    await this.getSalesSummary({
-      // inicio: 1503273600,
-      // fin: 1503359999
-      inicio: todayEpoch[0],
-      fin: todayEpoch[1]
-    }, f)
-    break;
-    case filter.week:
-    // obtener la fecha del inicio de la semana actual
-    // const inicioSemana = moment().day(1).format(utils.getDateFormat())
-    // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
-    const lastWeek = moment().subtract(7, 'day');
-    const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
-
-    await this.loadLocalData(f)
-    await this.getSalesSummary({
-      inicio: lastWeekEpoch[0],
-      fin: todayEpoch[1]
-    }, f)
-    break;
-    case filter.month:
-    const currentMonth = moment().month() + 1
-    const currentYear = moment().year()
-    const strDate = currentMonth+'/1/'+currentYear
-    // const startingMonthDate = moment(strDate, utils.getDateFormat())
-    const startingMonthDateEPOCH = utils.getEpochDate(strDate)
-
-    await this.loadLocalData(f)
-    await this.getSalesSummary({
-      inicio: startingMonthDateEPOCH[0],
-      fin: todayEpoch[1]
-    }, f)
-    break;
-    default:
-    break;
-  }
-  this.setState({showRefreshIcon:false})
-}
 
   async loadLocalData(filterType) {
     const cachedData = await localStorage.getItem(filterType)
@@ -266,24 +310,32 @@ async setFilterType(f) {
   }
 
   exportData = () => {
-    // const data1 = [{Sucursal:1,Ventas:10},{Sucursal:2,Ventas:20}];
-    let data1 = []
-    this.state.branchsData.map( (item, index) => data1.push(item) )
-    const opts = [
-      {
-        sheetid:'Data',
-        header:true
-      }
-    ];
-    const res = alasql('SELECT * INTO XLSX("summary.xlsx",?) FROM ?', [opts,[data1]]);
+    try{
+      // const data1 = [{Sucursal:1,Ventas:10},{Sucursal:2,Ventas:20}];
+      let data1 = []
+      this.state.branchsData.map( (item, index) => data1.push(item) )
+      const opts = [
+        {
+          sheetid:'Data',
+          header:true
+        }
+      ];
+      alasql('SELECT * INTO XLSX("summary.xlsx",?) FROM ?', [opts,[data1]]);
+    }catch(err) {
+      alert(err)
+      console.log(err)
+    }
   }
-  render() {
 
+
+
+  render() {
+    // console.log(this.state.apiKey)
     // para mostrar el icono del spinner mientras hace la carga en segundo plano...
     const refreshingData = (this.state.showRefreshIcon)?<i className="fa fa-refresh fa-spin" style={styles.fontSpinner}></i>:null
 
     return (
-      <div className="container">
+      <div className="container-fluid">
 
         {/* BARRA SUPERIOR */}
         {/* <div className="row" >

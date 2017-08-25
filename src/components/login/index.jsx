@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 
-import axios from 'axios'
+// import axios from 'axios'
 
 import './login.css'
 
@@ -30,9 +30,9 @@ class Login extends Component {
     params.append('username', 'pos.invu');
     params.append('password', 'ff9907a80070300578eb65a2137670009e8c17cf');
 
-    axios.post(endPoint, params)
-      .then( (response) => console.log(response) )
-      .then( (error) => console.log(error) )
+    // axios.post(endPoint, params)
+    //   .then( (response) => console.log(response) )
+    //   .then( (error) => console.log(error) )
 
     // axios.get('https://api.invupos.com/invuApiPos/index.php?r=menu')
     //   .then(function (response) {
