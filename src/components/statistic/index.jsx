@@ -161,21 +161,15 @@ class Statistic extends Component {
   // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
   async getSalesSummary(dates, filterType) {
     try{
-      //  console.log('aqui va en getSalesSummary!');
 
       //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
-      let baseBranchs = this.state.dataList
+      let branchs = this.state.dataList
       if (this.state.dataList.length === 0){
         await this.fetchData()
-        baseBranchs = this.state.branchsData
+        branchs = this.state.branchsData
       }
 
-      const branchs = baseBranchs
-      // branchs = branchs.sort()
-      console.log('en getSalesSummary: ',branchs);
-
-      // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES....
-      //  LUEGO IMPRIMIR LOS GRAFICOS
+      // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES, LUEGO IMPRIMIR LOS GRAFICOS
       let auxBranchsData = []
       await Promise.all (branchs.map(
         async (item, index) => {
@@ -193,7 +187,7 @@ class Statistic extends Component {
             sales: data.totales.total.toFixed(2)
           }
 
-          console.log(`${this.state.dataList[index].negocio} - ${branchElement.name}`)
+          // console.log(`${this.state.dataList[index].negocio} - ${branchElement.name}`)
           //  agregar info por cada sucursal
           auxBranchsData.push(branchElement)
           return null
@@ -201,7 +195,8 @@ class Statistic extends Component {
       )
     )
 
-console.log('auxBranchsData: ',auxBranchsData)
+    auxBranchsData.sort( (a, b) => a.name.localeCompare(b.name) )
+
     // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
     this.setState({branchsData: auxBranchsData})
     localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
@@ -227,7 +222,7 @@ console.log('auxBranchsData: ',auxBranchsData)
       }
 
       this.setState({
-        dataList: data.franquicias,
+        dataList: data.franquicias.sort( (a, b) => a.negocio.localeCompare(b.negocio) ),
         branchsData: data.franquicias,
         totalBranchs: totalBranchs
       })
@@ -249,7 +244,8 @@ showStats(filterType) {
   let rgba = null
   let trimLabel = null
   data.map( (item, index) => {
-    trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
+    // trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
+    trimLabel = item.name
     labels.push(trimLabel)
     datasetsData.push(item.sales)
 
@@ -293,7 +289,7 @@ showStats(filterType) {
 }
 
 
-
+// carga las estadisticas en cache....
   async loadLocalData(filterType) {
     const cachedData = await localStorage.getItem(filterType)
     const cachedBranchsData = await localStorage.getItem(`${filterType}BranchsData`)
@@ -309,6 +305,8 @@ showStats(filterType) {
 
   }
 
+
+// metodo para exportar los datos estadisticos de las graficas...
   exportData = () => {
     try{
       // const data1 = [{Sucursal:1,Ventas:10},{Sucursal:2,Ventas:20}];
@@ -330,7 +328,7 @@ showStats(filterType) {
 
 
   render() {
-    // console.log(this.state.apiKey)
+
     // para mostrar el icono del spinner mientras hace la carga en segundo plano...
     const refreshingData = (this.state.showRefreshIcon)?<i className="fa fa-refresh fa-spin" style={styles.fontSpinner}></i>:null
 
@@ -361,10 +359,10 @@ showStats(filterType) {
 
 
 
-            <div className="btn-group-vertical btn-block active" data-toggle="buttons">
+            <div className="btn-group-vertical btn-block " data-toggle="buttons">
               <button
                 type="button"
-                className="btn btn-info btn-lg"
+                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.day) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="true"
                 autoComplete="off"
@@ -375,7 +373,7 @@ showStats(filterType) {
               </button>
               <button
                 type="button"
-                className="btn btn-info btn-lg"
+                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.week) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -386,7 +384,7 @@ showStats(filterType) {
                 </button>
               <button
                 type="button"
-                className="btn btn-info btn-lg"
+                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.month) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"

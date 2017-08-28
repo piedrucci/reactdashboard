@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types';
 import {color} from './../../shared/styles'
 
 class Branch extends Component {
@@ -17,36 +18,41 @@ class Branch extends Component {
   }
 
   render() {
+    let sucs = null
+    try{
+      // CARGAR LAS SUCURSALES
+      sucs = this.state.branchsData.map(
+        (item, index) =>{
 
-    // CARGAR LAS SUCURSALES
-    const sucs = this.state.branchsData.map(
-      (item, index) =>{
+          const suc =
+          <div key={index} className="p-1">
 
-        const suc =
-        <div key={index} className="p-1">
+            <div key={index} className="list-group d-flex">
+              <a role="button" style={styles.loadingMessage} className="list-group-item list-group-item-action flex-row align-items-start active">
+                <div className="d-flex justify-content-between">
+                  <span style={styles.title}>{item.name}</span>
+                  {/* <small>3 days ago</small> */}
+                  <span className="badge badge-light">Tickets: {item.numOrders}</span>
+                </div>
+              </a>
+              <a role="button" className="list-group-item list-group-item-action flex-row align-items-start">
+                <div className="d-flex justify-content-between" >
+                  <h5 className="mb-1"> <span style={styles.salesLabel}>${item.salesformatted}</span></h5>
+                  <small className="text-muted">Avg: ${item.avgOrders}</small>
+                </div>
+              </a>
 
-          <div key={index} className="list-group d-flex">
-            <a role="button" style={styles.loadingMessage} className="list-group-item list-group-item-action flex-row align-items-start active">
-              <div className="d-flex justify-content-between">
-                <span style={styles.title}>{item.name}</span>
-                {/* <small>3 days ago</small> */}
-                <span className="badge badge-light">Tickets: {item.numOrders}</span>
-              </div>
-            </a>
-            <a role="button" className="list-group-item list-group-item-action flex-row align-items-start">
-              <div className="d-flex justify-content-between" >
-                <h5 className="mb-1"> <span style={styles.salesLabel}>${item.salesformatted}</span></h5>
-                <small className="text-muted">Avg: ${item.avgOrders}</small>
-              </div>
-            </a>
+              {/* <button> */}
 
-            {/* <button> */}
-
+            </div>
           </div>
-        </div>
-      return  suc
-}
-    )
+          return  suc
+        }
+      )
+    }catch(err) {
+      console.log(err);
+    }
+
     return (
       <div>
         <div className="d-flex p-2 flex-row flex-wrap">
@@ -62,6 +68,10 @@ class Branch extends Component {
     )
   }
 
+}
+
+Branch.propTypes = {
+  branchsData: PropTypes.number
 }
 
 export default Branch

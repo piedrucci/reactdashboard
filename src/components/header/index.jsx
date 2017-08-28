@@ -7,7 +7,7 @@ class Header extends Component{
   constructor() {
     super()
     this.state = {
-      franchiseName: 'rrrrrr',
+      franchiseName: '',
     }
   }
 
@@ -16,8 +16,12 @@ class Header extends Component{
   }
 
   async loadFranchiseData() {
-    const json = await utils.getSessionParams()
-    this.setState({franchiseName:json.NOMBREF})
+    try{
+      const json = await utils.getSessionParams()
+      this.setState({franchiseName:(null!==json)?json.NOMBREF:''})
+    }catch(err){
+      console.error(err)
+    }
   }
 
   render() {
@@ -25,7 +29,7 @@ class Header extends Component{
       <div className="container-fluid" style={styles.navBar}>
 
         <nav className="navbar navbar-expand-lg navbar-light " style={{backgroundColor:color.primary}}>
-          <span style={styles.titleContainer} className="navbar-brand" ><Link  to='/' style={styles.navBarItem}>{this.state.franchiseName}</Link></span>
+          <span style={styles.titleContainer} className="navbar-brand" ><Link to='/' style={styles.navBarItem}>{this.state.franchiseName}</Link></span>
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -36,9 +40,9 @@ class Header extends Component{
                 <Link className="nav-link" to='/stats' style={styles.navBarItem}>Estadisticas</Link>
                 {/* <a className="nav-link" href="#">Resumen <span className="sr-only">(current)</span></a> */}
               </li>
-              <li className="nav-item">
+              {/* <li className="nav-item">
                 <Link className="nav-link" to='/' style={styles.navBarItem}>Rango de Fechas</Link>
-              </li>
+              </li> */}
 
             </ul>
             {/* <form className="form-inline my-2 my-lg-0">
