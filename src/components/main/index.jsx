@@ -14,7 +14,7 @@ import Dashboard from '../dashboard'
 const Main = () => (
   <main>
     <Switch>
-      <Route exact path='/' component={Statistic}/>
+      <Route  path='/' component={Statistic}/>
       {/* <Route path='/dashboard' component={ChartContainer}/> */}
       <Route path='/stats' component={Statistic}/>
       <Route path='/dashboard' component={Dashboard}/>

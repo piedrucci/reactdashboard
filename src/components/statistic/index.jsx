@@ -26,7 +26,7 @@ const chartOptions1 = {
 const chartOptions2 = {
   displayTitle: true,
   titleSize: 16,
-  displayLegend: true,
+  displayLegend: false,
   legendPosition: position.right,
   maintainAspectRatio: false,
   size: {
@@ -361,12 +361,12 @@ showStats(filterType) {
 
 
 
-            <div className="btn-group-vertical btn-block" data-toggle="buttons">
+            <div className="btn-group-vertical btn-block active" data-toggle="buttons">
               <button
                 type="button"
                 className="btn btn-info btn-lg"
                 data-toggle="buttons"
-                aria-pressed="false"
+                aria-pressed="true"
                 autoComplete="off"
                 onClick={()=>this.setFilterType(filter.day)}
                 >
@@ -410,16 +410,16 @@ showStats(filterType) {
 
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
         <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}>
-          <div className="col-sm-4">
+          <div className="col-sm-12 col-lg-4">
             <ChartContainer
               chartType={types.pie}
               chartData={this.state.chartData}
               chartOptions={chartOptions1}
             />
           </div>
-          <div className="col-sm-8">
+          <div className="col-sm-12 col-sm-8">
             <ChartContainer
-              chartType={types.line}
+              chartType={types.bar}
               chartData={this.state.chartData}
               chartOptions={chartOptions2}
             />

@@ -1,14 +1,31 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
 import { color } from './../../shared/styles'
+import utils from './../../shared/utilities'
 
 class Header extends Component{
+  constructor() {
+    super()
+    this.state = {
+      franchiseName: 'rrrrrr',
+    }
+  }
+
+  componentDidMount() {
+    this.loadFranchiseData()
+  }
+
+  async loadFranchiseData() {
+    const json = await utils.getSessionParams()
+    this.setState({franchiseName:json.NOMBREF})
+  }
+
   render() {
     return (
       <div className="container-fluid" style={styles.navBar}>
 
         <nav className="navbar navbar-expand-lg navbar-light " style={{backgroundColor:color.primary}}>
-          <span style={styles.titleContainer} className="navbar-brand" ><Link  to='/' style={styles.navBarItem}>Little Caesars</Link></span>
+          <span style={styles.titleContainer} className="navbar-brand" ><Link  to='/' style={styles.navBarItem}>{this.state.franchiseName}</Link></span>
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
           </button>
@@ -44,11 +61,12 @@ const styles = {
   },
   navBarItem: {
     color: '#e8e8e8',
-    fontWeight:'regular'
+    fontWeight:'regular',
   },
   titleContainer: {
     backgroundColor: color.primary,
-    color: '#ffffff'
+    color: '#ffffff',
+    cursor:'default',
   },
 }
 
