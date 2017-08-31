@@ -1,5 +1,5 @@
 import React from 'react'
-import { Switch, Route } from 'react-router-dom'
+import { Switch, Route, Redirect } from 'react-router-dom'
 // import Home from '../home'
 // import Login from '../login'
 // import ChartContainer from '../chart'
@@ -14,10 +14,11 @@ import Dashboard from '../dashboard'
 const Main = () => (
   <main>
     <Switch>
-      <Route  path='/' component={Statistic}/>
+      <Route exact path='/' component={Statistic}/>
       {/* <Route path='/dashboard' component={ChartContainer}/> */}
       <Route path='/stats' component={Statistic}/>
       <Route path='/dashboard' component={Dashboard}/>
+      <Redirect from="/" to="/stats"/>
     </Switch>
   </main>
 )

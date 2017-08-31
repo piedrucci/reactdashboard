@@ -6,10 +6,14 @@ import ChartContainer from './../chart'
 import { types, position } from './../chart/chart'
 import Progress from './../progress'
 import moment from 'moment'
+import locale_es from 'moment/locale/es'
 import {color} from './../../shared/styles'
+// import DateTimePicker from 'react-datetimepicker-bootstrap'
+import * as Datetime from 'react-datetime'
 
 const alasql = window.alasql;
 
+let toggleButtonDate = false
 
 const chartOptions1 = {
   displayTitle: true,
@@ -38,7 +42,8 @@ const chartOptions2 = {
 const filter = {
   day: 'day',
   week: 'week',
-  month: 'month'
+  month: 'month',
+  date: 'date'
 }
 
 class Statistic extends Component {
@@ -74,16 +79,21 @@ class Statistic extends Component {
       isLoadingData: true,
       showRefreshIcon: true,
       chartFilter: filter.day,
+
+      fullDateStr: moment().format("LL"),
+      iconDateButton: <i className="fa fa-arrow-down" aria-hidden="true"></i>,
+      pickerDate: ''
     }
 
     this.setFilterType = this.setFilterType.bind(this)
+    this.toggleIconButtonDate = this.toggleIconButtonDate.bind(this)
+    this.executeCalc = this.executeCalc.bind(this)
 
   }
 
-  componentWillMount() {
-  }
 
   componentDidMount() {
+    moment.locale('es')
     this.loadSessionParams()
     this.setFilterType(filter.day)
 
@@ -112,16 +122,40 @@ class Statistic extends Component {
 
     // obtener la fecha actual
     const today = moment().format(utils.getDateFormat())
-    const todayEpoch = utils.getEpochDate(today)
+    let todayEpoch = utils.getEpochDate(today)
+    let strDates = {}
     // const dayOfMonth = moment().format('D')
     // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
-
     switch (f) {
       case filter.day:
+        // preparar el mensaje a mostrar de las fechas ..
+        strDates = {
+          from: '',
+          to: moment().format(utils.getDateFormat()),
+        }
+        this.setState({fullDateStr:`Estadisticas para el ${moment(strDates.to).format("LL")}`})
+        // console.log(todayEpoch)
+
         await this.loadLocalData(f)
         await this.getSalesSummary({
           // inicio: 1503273600,
           // fin: 1503359999
+          inicio: todayEpoch[0],
+          fin: todayEpoch[1]
+        }, f)
+        break;
+      case filter.date:
+        // preparar el mensaje a mostrar de las fechas ..
+        strDates = {
+          from: '',
+          to: this.state.pickerDate,
+        }
+        // this.setState({fullDateStr:`Estadisticas para el ${this.state.pickerDate}`})
+        todayEpoch = utils.getEpochDate(this.state.pickerDate)
+        this.setState({fullDateStr:`Estadisticas para el ${moment(strDates.to).format("LL")}`})
+
+        await this.loadLocalData(f)
+        await this.getSalesSummary({
           inicio: todayEpoch[0],
           fin: todayEpoch[1]
         }, f)
@@ -133,6 +167,14 @@ class Statistic extends Component {
         const lastWeek = moment().subtract(7, 'day');
         const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
 
+        // preparar el mensaje a mostrar de las fechas ..
+        strDates = {
+          from: moment.unix(lastWeekEpoch[0]).add(5,'hour').format('LL'),
+          to: moment.unix(todayEpoch[1]).add(5,'hour').format('LL'),
+        }
+        this.setState({fullDateStr:`Estadisticas desde ${strDates.from} al ${strDates.to}`})
+
+
         await this.loadLocalData(f)
         await this.getSalesSummary({
           inicio: lastWeekEpoch[0],
@@ -142,9 +184,18 @@ class Statistic extends Component {
       case filter.month:
         const currentMonth = moment().month() + 1
         const currentYear = moment().year()
-        const strDate = currentMonth+'/1/'+currentYear
+        // const strDate = currentMonth+'/1/'+currentYear
+        const strDate = currentYear+'-'+currentMonth+'-1'
         // const startingMonthDate = moment(strDate, utils.getDateFormat())
         const startingMonthDateEPOCH = utils.getEpochDate(strDate)
+
+        // preparar el mensaje a mostrar de las fechas ..
+        strDates = {
+          from: moment.unix(startingMonthDateEPOCH[0]).add(5,'hour').format('LL'),
+          to: moment.unix(todayEpoch[1]).add(5,'hour').format('LL'),
+        }
+        this.setState({fullDateStr:`Estadisticas desde ${strDates.from} al ${strDates.to}`})
+
 
         await this.loadLocalData(f)
         await this.getSalesSummary({
@@ -161,7 +212,6 @@ class Statistic extends Component {
   // OBTENER TODOS TOTALES ACUMULADOS (FIN-DEL-DIA) POR CADA SUCURSAL
   async getSalesSummary(dates, filterType) {
     try{
-
       //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
       let branchs = this.state.dataList
       if (this.state.dataList.length === 0){
@@ -174,7 +224,7 @@ class Statistic extends Component {
       await Promise.all (branchs.map(
         async (item, index) => {
           // console.log(item);
-          //  OBTIENE EL RESUMEN DE VENTAS DEL DIA (FECHAS=15-AGO)
+          //  OBTIENE EL RESUMEN DE VENTAS DEL DIA
           const res = await api.getFinDiaFechas(dates, item.APIKEY)
           const data = await res.json()
 
@@ -270,16 +320,19 @@ showStats(filterType) {
   // cachear los datos en localStorage
   switch (filterType) {
     case filter.day:
-    localStorage.setItem(filterType, JSON.stringify(chartData))
-    break;
+      localStorage.setItem(filterType, JSON.stringify(chartData))
+      break;
+    case filter.date:
+      localStorage.setItem(filterType, JSON.stringify(chartData))
+      break;
     case filter.week:
-    localStorage.setItem(filterType, JSON.stringify(chartData))
-    break;
+      localStorage.setItem(filterType, JSON.stringify(chartData))
+      break;
     case filter.month:
-    localStorage.setItem(filterType, JSON.stringify(chartData))
-    break;
+      localStorage.setItem(filterType, JSON.stringify(chartData))
+      break;
     default:
-    break;
+      break;
   }
   console.log('finalizacion de la carga en segundo plano...')
   this.setState({
@@ -326,6 +379,19 @@ showStats(filterType) {
   }
 
 
+  toggleIconButtonDate = () => {
+    let _iconButton = <i className="fa fa-arrow-down" aria-hidden="true"></i>
+    if (!toggleButtonDate){
+      _iconButton = <i className="fa fa-arrow-up" aria-hidden="true"></i>
+    }
+    toggleButtonDate = !toggleButtonDate
+    this.setState({iconDateButton:_iconButton})
+  }
+
+  executeCalc = async(d) => {
+    await this.setState({pickerDate:d,showRefreshIcon:true})
+    this.setFilterType(filter.date)
+  }
 
   render() {
 
@@ -346,23 +412,10 @@ showStats(filterType) {
         <div className="row">
           <div className="col-sm-2">
 
-
-            {/* <div className="info-box">
-              <span className="info-box-icon bg-aqua"><i className="fa fa-envelope-o"></i></span>
-
-              <div className="info-box-content">
-                <span className="info-box-text">Messages</span>
-                <span className="info-box-number">1,410</span>
-              </div>
-
-            </div> */}
-
-
-
             <div className="btn-group-vertical btn-block " data-toggle="buttons">
               <button
                 type="button"
-                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.day) ? 'active' : ''}`}
+                className={`btn btn-light ${(this.state.chartFilter===filter.day) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="true"
                 autoComplete="off"
@@ -373,7 +426,7 @@ showStats(filterType) {
               </button>
               <button
                 type="button"
-                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.week) ? 'active' : ''}`}
+                className={`btn btn-light ${(this.state.chartFilter===filter.week) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -384,7 +437,7 @@ showStats(filterType) {
                 </button>
               <button
                 type="button"
-                className={`btn btn-info btn-lg ${(this.state.chartFilter===filter.month) ? 'active' : ''}`}
+                className={`btn btn-light ${(this.state.chartFilter===filter.month) ? 'active' : ''}`}
                 data-toggle="buttons"
                 aria-pressed="false"
                 autoComplete="off"
@@ -392,30 +445,94 @@ showStats(filterType) {
                 >Mes &nbsp;
                 { (this.state.chartFilter===filter.month)?refreshingData:null}</button>
             </div>
-            <button type='button' className="btn btn-success btn-block" onClick={()=>this.exportData()}>
+
+            <button type='button' className="btn btn-outline-info btn-block" onClick={()=>this.exportData()}>
               <i className="fa fa-file-excel-o" aria-hidden="true"></i> &nbsp;&nbsp;&nbsp;
               Export
             </button>
+
+            <br />
+
+
+            <button className="btn btn-outline-info btn-block" type="button" data-toggle="collapse"
+              data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"
+              onClick={this.toggleIconButtonDate}
+              >
+              <i className="fa fa-calendar" aria-hidden="true"></i>&nbsp;&nbsp;
+              Cambiar Dia&nbsp;&nbsp;
+              {this.state.iconDateButton}
+            </button>
+
+            {/* mostrar widget del calendario ... */}
+            <div className="collapse" id="collapseExample">
+              <div className="card card-body">
+                <Datetime
+                  style={{marginTop:30}}
+                  dateFormat={utils.getDateFormat()}
+                  timeFormat={false}
+                  defaultValue={new Date()}
+                  closeOnSelect={true}
+                  onChange={ (d) => {
+                    // console.log(moment(d).toDate())
+                    // por defecto el Datetime devuelve un moment object, hay que formatearlo al formato que se esta usando
+                    const fe1=moment(d).format(utils.getDateFormat())
+                    // metodo async para actualizar cambiar el dia del resumen
+                    this.executeCalc(fe1)
+                  }}
+                />
+              </div>
+            </div>
+
+
           </div>
           <div className="col-sm-10">
             {
               this.state.isLoadingData
               ? <Progress visible={true} />
-              : <Branch data={this.state.branchsData} />
+              : <div>
+
+
+                {/* =========  T A B S   ========  */}
+              {/* <ul className="nav nav-tabs" role="tablist">
+                <li className="nav-item">
+                  <a className="nav-link active" href="#profile" role="tab" data-toggle="tab">profile</a>
+                </li>
+                <li className="nav-item">
+                  <a className="nav-link" href="#buzz" role="tab" data-toggle="tab">buzz</a>
+                </li>
+                <li className="nav-item">
+                  <a className="nav-link" href="#references" role="tab" data-toggle="tab">references</a>
+                </li>
+              </ul>
+
+              <div className="tab-content">
+                <div role="tabpanel" className="tab-pane fade in active" id="profile">...</div>
+                <div role="tabpanel" className="tab-pane fade" id="buzz">bbb</div>
+                <div role="tabpanel" className="tab-pane fade" id="references">ccc</div>
+              </div> */}
+
+
+                <i className="fa fa-calendar" aria-hidden="true"></i><span style={{color: '#888888'}}>&nbsp;&nbsp;{this.state.fullDateStr}&nbsp;&nbsp;</span>
+
+                <Branch data={this.state.branchsData} />
+              </div>
             }
           </div>
         </div>
 
+
+
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
-        <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}>
-          <div className="col-sm-12 col-lg-4">
+        {/* <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}> */}
+        <div className="row" >
+          <div className="col-sm-4">
             <ChartContainer
               chartType={types.pie}
               chartData={this.state.chartData}
               chartOptions={chartOptions1}
             />
           </div>
-          <div className="col-sm-12 col-sm-8">
+          <div className="col-sm-8">
             <ChartContainer
               chartType={types.bar}
               chartData={this.state.chartData}

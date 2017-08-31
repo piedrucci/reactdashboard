@@ -1,6 +1,8 @@
 import moment from 'moment'
 
-var dateFormat = "M/D/YYYY"
+// var dateFormat = "M/D/YYYY"
+// var dateFormat = "DD/MM/YYYY"
+var dateFormat = "YYYY-MM-DD"
 var utils =
 {
   generateRGBA() {
@@ -17,8 +19,8 @@ var utils =
 
 // DEVUELVE ARRAY CON LAS FECHAS DE INICIO Y FIN EN FORMATO EPOCH(UNIX)
   getEpochDate(date) {
-    let epochStartingDate = moment(date + " 00:00:00 +0000", "M/D/YYYY HH:mm:ss Z").valueOf();
-    let epochEndingDate   = moment(date + " 23:59:59 +0000", "M/D/YYYY HH:mm:ss Z").valueOf();
+    let epochStartingDate = moment(date + " 00:00:00 +0000", dateFormat + " HH:mm:ss Z").valueOf();
+    let epochEndingDate   = moment(date + " 23:59:59 +0000", dateFormat + " HH:mm:ss Z").valueOf();
     return [
       (epochStartingDate / 1000),
       (epochEndingDate / 1000)

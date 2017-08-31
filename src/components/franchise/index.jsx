@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 
-import DateTimePicker from 'react-datetimepicker-bootstrap'
+// import DateTimePicker from 'react-datetimepicker-bootstrap'
 
 import ChartContainer from './../chart'
 import { types, position } from './../chart/chart'
@@ -259,7 +259,7 @@ class Franchise extends Component {
           </div>
 
           <div className="col-sm-4">
-            <DateTimePicker
+            {/* <DateTimePicker
               id="date1"
               format={dateFormat}
               placeholder="Fecha Inicio"
@@ -271,7 +271,7 @@ class Franchise extends Component {
               format={dateFormat}
               placeholder="Fecha Fin"
               getValue={(v)=>this.setDate(v, 'fin')}
-            />
+            /> */}
             <button
               className="btn btn-primary"
               onClick={this.getStats}
