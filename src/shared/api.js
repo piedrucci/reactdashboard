@@ -17,9 +17,9 @@ var api =
     return response
   },
 
-  async getItemsVendidosFechas(fechas, apiKey) {
+  getItemsVendidosFechas(fechas, apiKey) {
     const fullPath = endPoint + 'citas/TotalesItemsVendidosFechas/fini/' + fechas.inicio + '/ffin/' + fechas.fin
-    const response = await fetch( fullPath, { headers: { 'APIKEY': apiKey } })
+    const response = fetch( fullPath, { headers: { 'APIKEY': apiKey } })
     return response
   },
 

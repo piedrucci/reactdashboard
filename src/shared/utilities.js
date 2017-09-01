@@ -3,6 +3,8 @@ import moment from 'moment'
 // var dateFormat = "M/D/YYYY"
 // var dateFormat = "DD/MM/YYYY"
 var dateFormat = "YYYY-MM-DD"
+const alasql = window.alasql;
+
 var utils =
 {
   generateRGBA() {
@@ -42,6 +44,31 @@ var utils =
       })
     )
   },
+
+  formatNumber(value) {
+    return value.replace(/(\d)(?=(\d{3})+\.)/g, '$1,')
+  },
+
+
+
+  // metodo para exportar los datos estadisticos de las graficas...
+    exportData(data) {
+      try{
+        // const data1 = [{Sucursal:1,Ventas:10},{Sucursal:2,Ventas:20}];
+        let data1 = []
+        data.map( (item, index) => data1.push(item) )
+        const opts = [
+          {
+            sheetid:'Data',
+            header:true
+          }
+        ];
+        alasql('SELECT * INTO XLSX("summary.xlsx",?) FROM ?', [opts,[data1]]);
+      }catch(err) {
+        alert(err)
+        console.log(err)
+      }
+    },
 }
 
 export default utils

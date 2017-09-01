@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
-import { color } from './../../shared/styles'
+// import { color } from './../../shared/styles'
 import utils from './../../shared/utilities'
 
 class Header extends Component{
@@ -66,17 +66,11 @@ class Header extends Component{
               <Link className={`nav-link ${(this.state.opt===1) ? 'active' : ''}`} onClick={()=>this.setState({opt:1})} to='/stats' >Resumen</Link>
             </li>
             <li className="nav-item">
-              <Link className={`nav-link ${(this.state.opt===2) ? 'active' : ''}`} onClick={()=>this.setState({opt:2})} to='/dashboard' >Items Vendidos</Link>
+              <Link className={`nav-link ${(this.state.opt===2) ? 'active' : ''}`} onClick={()=>this.setState({opt:2})} to='/payment' >Pagos</Link>
             </li>
-            {/* <li className="nav-item">
-              <Link className={`nav-link ${(this.state.opt===3) ? 'active' : ''}`} onClick={()=>this.setState({opt:3})} to='/dashboard' >Items Vendidos</Link>
-            </li> */}
 
           </ul>
-          {/* <form className="form-inline my-2 my-lg-0">
-            <input className="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search" />
-            <button className="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form> */}
+
         </div>
       </nav>
 
@@ -85,21 +79,21 @@ class Header extends Component{
 }
 
 
-const styles = {
-  navBar: {
-    fontWeight: 'bold',
-    color: '#ffffff'
-    // fontSize: '2em'
-  },
-  navBarItem: {
-    color: '#e8e8e8',
-    fontWeight:'regular',
-  },
-  titleContainer: {
-    backgroundColor: color.primary,
-    color: '#ffffff',
-    cursor:'default',
-  },
-}
+// const styles = {
+//   navBar: {
+//     fontWeight: 'bold',
+//     color: '#ffffff'
+//     // fontSize: '2em'
+//   },
+//   navBarItem: {
+//     color: '#e8e8e8',
+//     fontWeight:'regular',
+//   },
+//   titleContainer: {
+//     backgroundColor: color.primary,
+//     color: '#ffffff',
+//     cursor:'default',
+//   },
+// }
 
 export default Header

@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import api from './../../shared/api'
-import Branch from './../branch'
+import Payment from './../payment'
 import utils from './../../shared/utilities'
-import ChartContainer from './../chart'
-import { types, position } from './../chart/chart'
+// import ChartContainer from './../chart'
+// import { types, position } from './../chart/chart'
 import Progress from './../progress'
 import moment from 'moment'
 import locale_es from 'moment/locale/es'
@@ -11,32 +11,31 @@ import {color} from './../../shared/styles'
 // import DateTimePicker from 'react-datetimepicker-bootstrap'
 import * as Datetime from 'react-datetime'
 
-
 let toggleButtonDate = false
 
-const chartOptions1 = {
-  displayTitle: true,
-  titleSize: 16,
-  displayLegend: true,
-  legendPosition: position.bottom,
-  maintainAspectRatio: false,
-  size: {
-    width: 0,
-    height: 400
-  }
-}
-
-const chartOptions2 = {
-  displayTitle: true,
-  titleSize: 16,
-  displayLegend: false,
-  legendPosition: position.right,
-  maintainAspectRatio: false,
-  size: {
-    width: 0,
-    height: 400
-  }
-}
+// const chartOptions1 = {
+//   displayTitle: true,
+//   titleSize: 16,
+//   displayLegend: true,
+//   legendPosition: position.bottom,
+//   maintainAspectRatio: false,
+//   size: {
+//     width: 0,
+//     height: 400
+//   }
+// }
+//
+// const chartOptions2 = {
+//   displayTitle: true,
+//   titleSize: 16,
+//   displayLegend: false,
+//   legendPosition: position.right,
+//   maintainAspectRatio: false,
+//   size: {
+//     width: 0,
+//     height: 400
+//   }
+// }
 
 const filter = {
   day: 'day',
@@ -45,7 +44,7 @@ const filter = {
   date: 'date'
 }
 
-class Statistic extends Component {
+class PaymentStats extends Component {
 
   constructor() {
     super()
@@ -81,7 +80,8 @@ class Statistic extends Component {
 
       fullDateStr: moment().format("LL"),
       iconDateButton: <i className="fa fa-arrow-down" aria-hidden="true"></i>,
-      pickerDate: ''
+      pickerDate: '',
+      activeBranch: null,
     }
 
     this.setFilterType = this.setFilterType.bind(this)
@@ -91,9 +91,9 @@ class Statistic extends Component {
   }
 
 
-  componentDidMount() {
+  async componentDidMount() {
     moment.locale('es')
-    this.loadSessionParams()
+    await this.loadSessionParams()
     this.setFilterType(filter.day)
 
     // console.log(this.props.location.pathname)
@@ -101,7 +101,6 @@ class Statistic extends Component {
 
   async loadSessionParams() {
     let _params = await utils.getSessionParams()
-
     // en caso de que no existan datos, usar por defecto
     if ( _params === null ){
       await utils.initializeParams()
@@ -123,8 +122,7 @@ class Statistic extends Component {
     const today = moment().format(utils.getDateFormat())
     let todayEpoch = utils.getEpochDate(today)
     let strDates = {}
-    // const dayOfMonth = moment().format('D')
-    // const getCurrentMonth = (Math.trunc(dayOfMonth / 7)) > 0
+
     switch (f) {
       case filter.day:
         // preparar el mensaje a mostrar de las fechas ..
@@ -133,12 +131,8 @@ class Statistic extends Component {
           to: moment().format(utils.getDateFormat()),
         }
         this.setState({fullDateStr:`Estadisticas para el ${moment(strDates.to).format("LL")}`})
-        // console.log(todayEpoch)
-
         await this.loadLocalData(f)
         await this.getSalesSummary({
-          // inicio: 1503273600,
-          // fin: 1503359999
           inicio: todayEpoch[0],
           fin: todayEpoch[1]
         }, f)
@@ -218,40 +212,40 @@ class Statistic extends Component {
         branchs = this.state.branchsData
       }
 
-      // ESPERAR QUE TERMINE DE ITERAR EL ARRAY DE SUCURSALES, LUEGO IMPRIMIR LOS GRAFICOS
-      let auxBranchsData = []
-      await Promise.all (branchs.map(
-        async (item, index) => {
-          // console.log(item);
-          //  OBTIENE EL RESUMEN DE VENTAS DEL DIA
-          const res = await api.getFinDiaFechas(dates, item.APIKEY)
-          const data = await res.json()
+      let auxPaymentsData = []
+      let branchSummaryElement = {}
 
-          const branchElement = {
-            name: item.negocio,
-            numOrders: data.totales.num_cuentas,
-            avgOrders: data.totales.ticket_prom.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-            shortName: ( item.negocio.trim().length > 13 ) ? item.negocio.trim().substr(14, item.negocio.length) : item.negocio.trim().substr(0, item.negocio.trim().length),
-            salesformatted: data.totales.total.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'),
-            sales: data.totales.total.toFixed(2)
+      let res = null    // aca se almacena un Promise devuelto del Request a la API
+      let branchSummary = null  // Promise convertido a formato JSON
+
+      // iniciar el ciclo de procesamiento de estadisticas ...
+      await Promise.all (branchs.map(
+        async (branch, index) => {
+          // console.log(branch);
+          //  OBTIENE EL RESUMEN DE VENTAS DEL DIA
+          res = await api.getFinDiaFechas(dates, branch.APIKEY)
+          branchSummary = await res.json()
+
+          branchSummaryElement = {
+            name: branch.negocio,
+            cardPaid: branchSummary.totales.card_paid,
+            cashPaid: branchSummary.totales.cash_paid,
+            otherPaid: branchSummary.totales.other_paid,
+            creditNote: branchSummary.totales.nota_cred,
+            creditNoteCount: branchSummary.totales.cant_nota_cred,
+            openedOrdersCount: branchSummary.totales.cant_ord_abiertas,
+            deletedOrdersCount: branchSummary.totales.cant_ord_eliminadas,
+            cashIncome: branchSummary.totales.ingreso_caja,
+            cashOut: branchSummary.totales.retiro_caja,
           }
 
-          // console.log(`${this.state.dataList[index].negocio} - ${branchElement.name}`)
-          //  agregar info por cada sucursal
-          auxBranchsData.push(branchElement)
-          return null
-        }
+          auxPaymentsData.push(branchSummaryElement)
+              // return null
+        } )
       )
-    )
 
-    auxBranchsData.sort( (a, b) => a.name.localeCompare(b.name) )
+      this.totalesAcumulados(auxPaymentsData, filterType);
 
-    // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
-    this.setState({branchsData: auxBranchsData})
-    localStorage.setItem(`${filterType}BranchsData`, JSON.stringify(auxBranchsData))
-    //  this.setState({branchsData: [...this.state.branchsData, branchElement]})
-
-    this.showStats(filterType)
   }catch(err){
     alert(err)
   }
@@ -296,7 +290,7 @@ showStats(filterType) {
     // trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
     trimLabel = item.name
     labels.push(trimLabel)
-    datasetsData.push(item.sales)
+    datasetsData.push(item.amount)
 
     rgba = utils.generateRGBA()
     datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.4)' )
@@ -304,8 +298,9 @@ showStats(filterType) {
     return null
   } )
 
+  console.log(datasetsData);
   const chartData = {
-    title: 'Resumen de Ventas',
+    title: 'Payments',
     labels: labels,
     datasets:[{
       label: datasetsLabel,
@@ -319,16 +314,16 @@ showStats(filterType) {
   // cachear los datos en localStorage
   switch (filterType) {
     case filter.day:
-      localStorage.setItem(filterType, JSON.stringify(chartData))
+      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
       break;
     case filter.date:
-      localStorage.setItem(filterType, JSON.stringify(chartData))
+      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
       break;
     case filter.week:
-      localStorage.setItem(filterType, JSON.stringify(chartData))
+      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
       break;
     case filter.month:
-      localStorage.setItem(filterType, JSON.stringify(chartData))
+      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
       break;
     default:
       break;
@@ -344,11 +339,11 @@ showStats(filterType) {
 // carga las estadisticas en cache....
   async loadLocalData(filterType) {
     const cachedData = await localStorage.getItem(filterType)
-    const cachedBranchsData = await localStorage.getItem(`${filterType}BranchsData`)
+    const cachedBranchsData = await localStorage.getItem(`${filterType}PaymentsData`)
 
     if (cachedData) {
       this.setState({
-        chartData:JSON.parse(cachedData),
+        // chartData:JSON.parse(cachedData),
         branchsData: JSON.parse(cachedBranchsData),
         isLoadingData:false,
       })
@@ -356,6 +351,7 @@ showStats(filterType) {
     }
 
   }
+
 
 
   toggleIconButtonDate = () => {
@@ -371,6 +367,38 @@ showStats(filterType) {
     await this.setState({pickerDate:d,showRefreshIcon:true})
     this.setFilterType(filter.date)
   }
+
+
+  totalesAcumulados = (data, filterType)=>{
+
+    const cashPaid = data.reduce( (acum, current) => { return acum + current.cashPaid },0 )
+    const cardPaid = data.reduce( (acum, current) => { return acum + current.cardPaid },0 )
+    const otherPaid = data.reduce( (acum, current) => { return acum + current.otherPaid },0 )
+    const creditNote = data.reduce( (acum, current) => { return acum + current.creditNote },0 )
+    const creditNoteCount = data.reduce( (acum, current) => { return acum + current.creditNoteCount },0 )
+    const openedOrdersCount = data.reduce( (acum, current) => { return acum + current.openedOrdersCount },0 )
+    const deletedOrdersCount = data.reduce( (acum, current) => { return acum + current.deletedOrdersCount },0 )
+    const cashIncome = data.reduce( (acum, current) => { return acum + current.cashIncome },0 )
+    const cashOut = data.reduce( (acum, current) => { return acum + current.cashOut },0 )
+
+    let auxArray = [
+      {name: 'Efectivo', amount: cashPaid, isCurrency: true},
+      {name: 'Tarjeta', amount: cardPaid, isCurrency: true},
+      {name: 'Otro', amount: otherPaid, isCurrency: true},
+      {name: 'Nota Credito', amount: creditNote, isCurrency: true},
+      {name: 'Cant Nota Credito', amount: creditNoteCount, isCurrency: false},
+      {name: 'Ordenes Abiertas', amount: openedOrdersCount, isCurrency: false},
+      {name: 'Ordenes Eliminadas', amount: deletedOrdersCount, isCurrency: false},
+      {name: 'Ingreso Caja', amount: cashIncome, isCurrency: true},
+      {name: 'Retiro Caja', amount: cashOut, isCurrency: true}
+    ]
+
+    // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
+    this.setState({branchsData: auxArray})
+    localStorage.setItem(`${filterType}PaymentsData`, JSON.stringify(data))
+    // this.showStats(filterType)
+  }
+
 
   render() {
 
@@ -418,6 +446,23 @@ showStats(filterType) {
                 { (this.state.chartFilter===filter.month)?refreshingData:null}</button>
             </div>
 
+
+
+            {/* <div className="list-group" id="list-tab" role="tablist">
+              <a className="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#list-home" role="tab" aria-controls="home">Home</a>
+              <a className="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#list-profile" role="tab" aria-controls="profile">Profile</a>
+              <a className="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#list-messages" role="tab" aria-controls="messages">Messages</a>
+              <a className="list-group-item list-group-item-action" id="list-settings-list" data-toggle="list" href="#list-settings" role="tab" aria-controls="settings">Settings</a>
+            </div> */}
+
+            <br /><br />
+            <select className="form-control btn-outline-info" id="exampleFormControlSelect2">
+              <option>Todas</option>
+              {this.state.branchsData.map((branch, index)=> <option key={index}>{branch.name}</option>)}
+            </select>
+
+            <br /><br />
+            {/* <button type='button' className="btn btn-outline-info btn-block" onClick={()=>this.exportData()}> */}
             <button type='button' className="btn btn-outline-info btn-block" onClick={()=>utils.exportData(this.state.branchsData)}>
               <i className="fa fa-file-excel-o" aria-hidden="true"></i> &nbsp;&nbsp;&nbsp;
               Export
@@ -430,31 +475,30 @@ showStats(filterType) {
               data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"
               onClick={this.toggleIconButtonDate}
               >
-              <i className="fa fa-calendar" aria-hidden="true"></i>&nbsp;&nbsp;
-              Cambiar Dia&nbsp;&nbsp;
-              {this.state.iconDateButton}
-            </button>
+                <i className="fa fa-calendar" aria-hidden="true"></i>&nbsp;&nbsp;
+                Cambiar Dia&nbsp;&nbsp;
+                {this.state.iconDateButton}
+              </button>
 
-            {/* mostrar widget del calendario ... */}
-            <div className="collapse" id="collapseExample">
-              <div className="card card-body">
-                <Datetime
-                  style={{marginTop:30}}
-                  dateFormat={utils.getDateFormat()}
-                  timeFormat={false}
-                  defaultValue={new Date()}
-                  closeOnSelect={true}
-                  onChange={ (d) => {
-                    // console.log(moment(d).toDate())
-                    // por defecto el Datetime devuelve un moment object, hay que formatearlo al formato que se esta usando
-                    const fe1=moment(d).format(utils.getDateFormat())
-                    // metodo async para actualizar cambiar el dia del resumen
-                    this.executeCalc(fe1)
-                  }}
-                />
+              {/* mostrar widget del calendario ... */}
+              <div className="collapse" id="collapseExample">
+                <div className="card card-body">
+                  <Datetime
+                    style={{marginTop:30}}
+                    dateFormat={utils.getDateFormat()}
+                    timeFormat={false}
+                    defaultValue={new Date()}
+                    closeOnSelect={true}
+                    onChange={ (d) => {
+                      // console.log(moment(d).toDate())
+                      // por defecto el Datetime devuelve un moment object, hay que formatearlo al formato que se esta usando
+                      const fe1=moment(d).format(utils.getDateFormat())
+                      // metodo async para actualizar cambiar el dia del resumen
+                      this.executeCalc(fe1)
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-
 
           </div>
           <div className="col-sm-10">
@@ -463,40 +507,17 @@ showStats(filterType) {
               ? <Progress visible={true} />
               : <div>
 
-
-                {/* =========  T A B S   ========  */}
-              {/* <ul className="nav nav-tabs" role="tablist">
-                <li className="nav-item">
-                  <a className="nav-link active" href="#profile" role="tab" data-toggle="tab">profile</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#buzz" role="tab" data-toggle="tab">buzz</a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#references" role="tab" data-toggle="tab">references</a>
-                </li>
-              </ul>
-
-              <div className="tab-content">
-                <div role="tabpanel" className="tab-pane fade in active" id="profile">...</div>
-                <div role="tabpanel" className="tab-pane fade" id="buzz">bbb</div>
-                <div role="tabpanel" className="tab-pane fade" id="references">ccc</div>
-              </div> */}
-
-
                 <i className="fa fa-calendar" aria-hidden="true"></i><span style={{color: '#888888'}}>&nbsp;&nbsp;{this.state.fullDateStr}&nbsp;&nbsp;</span>
 
-                <Branch data={this.state.branchsData} />
+                <Payment data={this.state.branchsData} />
               </div>
             }
           </div>
         </div>
 
 
-
         {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
-        {/* <div className="row" style={{display: (this.state.isLoadingData)?'none':'block'}}> */}
-        <div className="row" >
+        {/* <div className="row" >
           <div className="col-sm-4">
             <ChartContainer
               chartType={types.pie}
@@ -511,13 +532,13 @@ showStats(filterType) {
               chartOptions={chartOptions2}
             />
           </div>
-        </div>
+        </div> */}
       </div>
     )
   }
 }
 
-export default Statistic
+export default PaymentStats
 
 const styles = {
   title: {
