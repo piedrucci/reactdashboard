@@ -9,7 +9,7 @@ class Payment extends Component {
     super(props)
     this.state = {
       dataList: [],
-      data: this.props.data
+      data: this.props.data || []
     }
   }
 
@@ -22,32 +22,37 @@ class Payment extends Component {
     let elements = null
     try{
       // recorrer la info
-      elements = this.state.data.map(
-        (item, index) =>{
+      // if ( this.state.data.length ){
+        let amount = 0
+        elements = this.state.data.map(
+          (item, index) =>{
+            amount = ( typeof item.amount === 'undefined' ) ? 0 : item.amount
 
-          const element =
-          <div key={index} className="p-1">
+            const element =
+            <div key={index} className="p-1">
 
 
-            <div className="card">
-              <div className="card-header">
-                <span style={styles.title}>{item.name}</span>
-              </div>
-              <div className="card-body">
-                {/* <h4 className="card-title"></h4> */}
-                <p className="card-text"><span style={styles.salesLabel}>{item.isCurrency?`$ ${utils.formatNumber(item.amount.toFixed(2))}`:`${utils.formatNumber(item.amount.toFixed(2))}`}</span></p>
-                {/* <span className="btn btn-primary">Go somewhere</span> */}
-              </div>
-              {/* <div className="card-footer text-muted">
+              <div className="card">
+                <div className="card-header">
+                  <span style={styles.title}>{item.name}</span>
+                </div>
+                <div className="card-body">
+                  {/* <h4 className="card-title"></h4> */}
+                  <p className="card-text"><span style={styles.salesLabel}>{item.isCurrency?`$ ${utils.formatNumber(amount.toFixed(2))}`:`${utils.formatNumber(amount.toFixed(2))}`}</span></p>
+                  {/* <span className="btn btn-primary">Go somewhere</span> */}
+                </div>
+                {/* <div className="card-footer text-muted">
                 <span style={styles.footerText}>Tickets: {item.numOrders}, Avg: ${item.avgOrders}</span>
               </div> */}
             </div>
           </div>
           return  element
         }
-      )
+        )
+      // }
     }catch(err) {
       console.log(err);
+      alert('fill data\n'+err)
     }
 
     return (
@@ -55,7 +60,8 @@ class Payment extends Component {
         <div className="d-flex p-2 flex-row flex-wrap">
           {
             (this.state.data.length > 0)
-            ? elements
+            ?
+            elements
             : <div className="alert text-center" style={styles.loadingMessage} role="alert">
                 Espere .... obteniendo datos desde el servidor...
               </div>
@@ -69,6 +75,10 @@ class Payment extends Component {
 
 Payment.propTypes = {
   data: PropTypes.array
+}
+
+Payment.defaultProps = {
+  data: []
 }
 
 export default Payment

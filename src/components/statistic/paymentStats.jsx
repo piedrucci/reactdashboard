@@ -13,30 +13,6 @@ import * as Datetime from 'react-datetime'
 
 let toggleButtonDate = false
 
-// const chartOptions1 = {
-//   displayTitle: true,
-//   titleSize: 16,
-//   displayLegend: true,
-//   legendPosition: position.bottom,
-//   maintainAspectRatio: false,
-//   size: {
-//     width: 0,
-//     height: 400
-//   }
-// }
-//
-// const chartOptions2 = {
-//   displayTitle: true,
-//   titleSize: 16,
-//   displayLegend: false,
-//   legendPosition: position.right,
-//   maintainAspectRatio: false,
-//   size: {
-//     width: 0,
-//     height: 400
-//   }
-// }
-
 const filter = {
   day: 'day',
   week: 'week',
@@ -52,27 +28,15 @@ class PaymentStats extends Component {
       // parametros necesarios para conectarse a la API
       params: '',
 
-      dataList: [],
-
-      // total de sucursales
-      totalBranchs: 0,
-
-      // informacion consolidada para enviarla al componente Branch
+      // lista de sucursales que luego se usara para actualizar DATALIST
       branchsData: [],
 
-      // info para enviar al componente que muestra el grafico
-      chartData: {
-        title: '',
+      // datos consolidados procesados por franquicias para mostrarlos
+      dataList: [],
+      // fullDataList: [],
 
-        labels:[],
-        datasets:[{
-          label: '',
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
+      //  aca estan todos los totales por sucursal (para ser usado al momento de filtrar 1 suc)
+      paymentsData: [],
 
       isLoadingData: true,
       showRefreshIcon: true,
@@ -81,13 +45,13 @@ class PaymentStats extends Component {
       fullDateStr: moment().format("LL"),
       iconDateButton: <i className="fa fa-arrow-down" aria-hidden="true"></i>,
       pickerDate: '',
-      activeBranch: null,
+      activeBranch: '',
     }
 
     this.setFilterType = this.setFilterType.bind(this)
     this.toggleIconButtonDate = this.toggleIconButtonDate.bind(this)
     this.executeCalc = this.executeCalc.bind(this)
-
+    this.updateDataFromBranch = this.updateDataFromBranch.bind(this)
   }
 
 
@@ -115,7 +79,8 @@ class PaymentStats extends Component {
     this.setState({
       isLoadingData:true,
       showRefreshIcon:true,
-      chartFilter: f
+      chartFilter: f,
+      // activeBranch: '',
     })
 
     // obtener la fecha actual
@@ -131,7 +96,7 @@ class PaymentStats extends Component {
           to: moment().format(utils.getDateFormat()),
         }
         this.setState({fullDateStr:`Estadisticas para el ${moment(strDates.to).format("LL")}`})
-        await this.loadLocalData(f)
+        // await this.loadLocalData(f)
         await this.getSalesSummary({
           inicio: todayEpoch[0],
           fin: todayEpoch[1]
@@ -155,8 +120,6 @@ class PaymentStats extends Component {
         break;
       case filter.week:
         // obtener la fecha del inicio de la semana actual
-        // const inicioSemana = moment().day(1).format(utils.getDateFormat())
-        // const inicioSemanaEpoch = utils.getEpochDate(inicioSemana)
         const lastWeek = moment().subtract(7, 'day');
         const lastWeekEpoch = utils.getEpochDate(lastWeek.format(utils.getDateFormat()))
 
@@ -206,11 +169,9 @@ class PaymentStats extends Component {
   async getSalesSummary(dates, filterType) {
     try{
       //  CREAR UN ARRAY AUX DE TODAS LAS SUCURSALES
-      let branchs = this.state.dataList
-      if (this.state.dataList.length === 0){
-        await this.fetchData()
-        branchs = this.state.branchsData
-      }
+
+      let branchs = ( this.state.branchsData < 1 ) ? await this.fetchData() : null
+      branchs = this.state.branchsData
 
       let auxPaymentsData = []
       let branchSummaryElement = {}
@@ -218,10 +179,10 @@ class PaymentStats extends Component {
       let res = null    // aca se almacena un Promise devuelto del Request a la API
       let branchSummary = null  // Promise convertido a formato JSON
 
-      // iniciar el ciclo de procesamiento de estadisticas ...
+      // iniciar el ciclo de procesamiento de estadisticas para cada sucursal ...
       await Promise.all (branchs.map(
         async (branch, index) => {
-          // console.log(branch);
+
           //  OBTIENE EL RESUMEN DE VENTAS DEL DIA
           res = await api.getFinDiaFechas(dates, branch.APIKEY)
           branchSummary = await res.json()
@@ -243,9 +204,8 @@ class PaymentStats extends Component {
               // return null
         } )
       )
-
+      this.setState({paymentsData: auxPaymentsData})
       this.totalesAcumulados(auxPaymentsData, filterType);
-
   }catch(err){
     alert(err)
   }
@@ -258,82 +218,18 @@ class PaymentStats extends Component {
       const res = await api.getBrachs(this.state.params.APIKEY)
       const data = await res.json()
 
-      const totalBranchs = data.franquicias.length
-
-      if ( totalBranchs < 1 ) {
+      if ( data.franquicias.length < 1 ) {
         alert('NO hay suscursales para mostrar...')
       }
 
       this.setState({
         dataList: data.franquicias.sort( (a, b) => a.negocio.localeCompare(b.negocio) ),
-        branchsData: data.franquicias,
-        totalBranchs: totalBranchs
+        branchsData: data.franquicias.sort( (a, b) => a.negocio.localeCompare(b.negocio) ),
       })
     }catch(err){
       console.error(err)
     }
   }
-
-
-// CARGA LOS DATOS Y LOS PREPARA PARA SER ENVIADOS AL COMPONENTE CHARTCONTAINER
-showStats(filterType) {
-  const data = this.state.branchsData
-  let labels = []
-  let datasetsLabel= 'Ventas'
-  let datasetsData = []
-  let datasetsBgColor = []
-  let datasetsBdColor = []
-
-  let rgba = null
-  let trimLabel = null
-  data.map( (item, index) => {
-    // trimLabel = ( item.name.trim().length > 13 ) ? item.name.trim().substr(14, item.name.length) : item.name.trim().substr(0, item.name.trim().length)
-    trimLabel = item.name
-    labels.push(trimLabel)
-    datasetsData.push(item.amount)
-
-    rgba = utils.generateRGBA()
-    datasetsBgColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 0.4)' )
-    datasetsBdColor.push( 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+', 1)' )
-    return null
-  } )
-
-  console.log(datasetsData);
-  const chartData = {
-    title: 'Payments',
-    labels: labels,
-    datasets:[{
-      label: datasetsLabel,
-      data: datasetsData,
-      backgroundColor: datasetsBgColor,
-      borderColor: datasetsBdColor,
-      borderWidth: 1
-    }]
-  }
-
-  // cachear los datos en localStorage
-  switch (filterType) {
-    case filter.day:
-      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
-      break;
-    case filter.date:
-      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
-      break;
-    case filter.week:
-      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
-      break;
-    case filter.month:
-      localStorage.setItem(filterType+'Payments', JSON.stringify(chartData))
-      break;
-    default:
-      break;
-  }
-  console.log('finalizacion de la carga en segundo plano...')
-  this.setState({
-    chartData:chartData,
-    isLoadingData:false
-  })
-}
 
 
 // carga las estadisticas en cache....
@@ -344,7 +240,7 @@ showStats(filterType) {
     if (cachedData) {
       this.setState({
         // chartData:JSON.parse(cachedData),
-        branchsData: JSON.parse(cachedBranchsData),
+        dataList: JSON.parse(cachedBranchsData),
         isLoadingData:false,
       })
       // return true
@@ -381,7 +277,7 @@ showStats(filterType) {
     const cashIncome = data.reduce( (acum, current) => { return acum + current.cashIncome },0 )
     const cashOut = data.reduce( (acum, current) => { return acum + current.cashOut },0 )
 
-    let auxArray = [
+    const auxArray = [
       {name: 'Efectivo', amount: cashPaid, isCurrency: true},
       {name: 'Tarjeta', amount: cardPaid, isCurrency: true},
       {name: 'Otro', amount: otherPaid, isCurrency: true},
@@ -394,9 +290,33 @@ showStats(filterType) {
     ]
 
     // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
-    this.setState({branchsData: auxArray})
-    localStorage.setItem(`${filterType}PaymentsData`, JSON.stringify(data))
+    // this.setState({branchsData: auxArray})
+    this.setState({dataList: auxArray, isLoadingData: false})
+    localStorage.setItem(`${filterType}PaymentsData`, JSON.stringify(auxArray))
     // this.showStats(filterType)
+  }
+
+
+  updateDataFromBranch = (e) => {
+    const selectedBranch = e.target.value
+    this.setState({activeBranch: selectedBranch})
+
+    if ( selectedBranch!=='' ) {
+      const branchData = this.state.paymentsData.filter((branch)=> branch.name.toLowerCase()===selectedBranch)
+
+      const auxArray = [
+        {name: 'Efectivo', amount: branchData[0].cashPaid, isCurrency: true},
+        {name: 'Tarjeta', amount: branchData[0].cardPaid, isCurrency: true},
+        {name: 'Otro', amount: branchData[0].otherPaid, isCurrency: true},
+        {name: 'Nota Credito', amount: branchData[0].creditNote, isCurrency: true},
+        {name: 'Cant Nota Credito', amount: branchData[0].creditNoteCount, isCurrency: false},
+        {name: 'Ordenes Abiertas', amount: branchData[0].openedOrdersCount, isCurrency: false},
+        {name: 'Ordenes Eliminadas', amount: branchData[0].deletedOrdersCount, isCurrency: false},
+        {name: 'Ingreso Caja', amount: branchData[0].cashIncome, isCurrency: true},
+        {name: 'Retiro Caja', amount: branchData[0].cashOut, isCurrency: true}
+      ]
+      this.setState({dataList: auxArray})
+    }
   }
 
 
@@ -456,10 +376,19 @@ showStats(filterType) {
             </div> */}
 
             <br /><br />
-            <select className="form-control btn-outline-info" id="exampleFormControlSelect2">
-              <option>Todas</option>
-              {this.state.branchsData.map((branch, index)=> <option key={index}>{branch.name}</option>)}
+            {(this.state.branchsData)
+            ?
+            <select
+              className="form-control btn-outline-info"
+              id="exampleFormControlSelect2"
+              value={this.state.activeBranch.toLowerCase()}
+              onChange={(val)=>this.updateDataFromBranch(val)}
+              >
+
+              <option value=''>Seleccione</option>
+              {this.state.branchsData.map((branch, index)=> <option key={index} value={branch.negocio.toLowerCase()}>{branch.negocio}</option>)}
             </select>
+            : null }
 
             <br /><br />
             {/* <button type='button' className="btn btn-outline-info btn-block" onClick={()=>this.exportData()}> */}
@@ -505,34 +434,20 @@ showStats(filterType) {
             {
               this.state.isLoadingData
               ? <Progress visible={true} />
-              : <div>
+              :
+              <div>
 
-                <i className="fa fa-calendar" aria-hidden="true"></i><span style={{color: '#888888'}}>&nbsp;&nbsp;{this.state.fullDateStr}&nbsp;&nbsp;</span>
+                <i className="fa fa-calendar" aria-hidden="true"></i><span style={{color: '#888888'}}>
+                  &nbsp;&nbsp;{this.state.fullDateStr}&nbsp;
+                  {(this.state.activeBranch!=='')?`(${this.state.activeBranch})`:''}
+                </span>
 
-                <Payment data={this.state.branchsData} />
+                <Payment data={this.state.dataList} />
               </div>
             }
           </div>
         </div>
 
-
-        {/* SECCION PARA MOSTRAR LOS GRAFICOS */}
-        {/* <div className="row" >
-          <div className="col-sm-4">
-            <ChartContainer
-              chartType={types.pie}
-              chartData={this.state.chartData}
-              chartOptions={chartOptions1}
-            />
-          </div>
-          <div className="col-sm-8">
-            <ChartContainer
-              chartType={types.bar}
-              chartData={this.state.chartData}
-              chartOptions={chartOptions2}
-            />
-          </div>
-        </div> */}
       </div>
     )
   }
