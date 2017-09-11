@@ -4,7 +4,7 @@ import { Switch, Route, Redirect } from 'react-router-dom'
 // import Login from '../login'
 // import ChartContainer from '../chart'
 import Statistic from '../statistic'
-import PaymentStats from '../statistic/paymentStats'
+import PaymentStats from '../statistic/daySummary'
 
 // The Main component renders one of the three provided
 // Routes (provided that one matches). Both the /roster
@@ -17,7 +17,7 @@ const Main = () => (
       <Route exact path='/' component={Statistic}/>
       {/* <Route path='/dashboard' component={ChartContainer}/> */}
       <Route path='/stats' component={Statistic}/>
-      <Route path='/payment' component={PaymentStats}/>
+      <Route path='/daysumary' component={PaymentStats}/>
       <Redirect from="/" to="/stats"/>
     </Switch>
   </main>

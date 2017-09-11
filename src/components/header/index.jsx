@@ -66,7 +66,7 @@ class Header extends Component{
               <Link className={`nav-link ${(this.state.opt===1) ? 'active' : ''}`} onClick={()=>this.setState({opt:1})} to='/stats' >Resumen</Link>
             </li>
             <li className="nav-item">
-              <Link className={`nav-link ${(this.state.opt===2) ? 'active' : ''}`} onClick={()=>this.setState({opt:2})} to='/payment' >Pagos</Link>
+              <Link className={`nav-link ${(this.state.opt===2) ? 'active' : ''}`} onClick={()=>this.setState({opt:2})} to='/daysumary' >Fin de Dia</Link>
             </li>
 
           </ul>

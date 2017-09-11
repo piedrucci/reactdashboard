@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import api from './../../shared/api'
-import Payment from './../payment'
+import DaySummary from './../daySummary'
 import utils from './../../shared/utilities'
 // import ChartContainer from './../chart'
 // import { types, position } from './../chart/chart'
@@ -189,15 +189,25 @@ class PaymentStats extends Component {
 
           branchSummaryElement = {
             name: branch.negocio,
-            cardPaid: branchSummary.totales.card_paid,
+
+            orders: branchSummary.totales.num_cuentas,
+            subtotal: branchSummary.totales.subtotal,
+            itemDiscount: branchSummary.totales.item_dis,
+            checkDiscount: branchSummary.totales.check_disc,
+            tax: branchSummary.totales.tax,
+            total: branchSummary.totales.total,
             cashPaid: branchSummary.totales.cash_paid,
+            cardPaid: branchSummary.totales.card_paid,
             otherPaid: branchSummary.totales.other_paid,
-            creditNote: branchSummary.totales.nota_cred,
+            partialCreditNoteCount: branchSummary.totales.cant_nota_cred_parc,
+            partialCreditNote: branchSummary.totales.nota_cred_parciales,
             creditNoteCount: branchSummary.totales.cant_nota_cred,
-            openedOrdersCount: branchSummary.totales.cant_ord_abiertas,
-            deletedOrdersCount: branchSummary.totales.cant_ord_eliminadas,
+            creditNote: branchSummary.totales.nota_cred,
             cashIncome: branchSummary.totales.ingreso_caja,
             cashOut: branchSummary.totales.retiro_caja,
+            openedOrdersCount: branchSummary.totales.cant_ord_abiertas,
+            deletedOrdersCount: branchSummary.totales.cant_ord_eliminadas,
+
           }
 
           auxPaymentsData.push(branchSummaryElement)
@@ -267,26 +277,42 @@ class PaymentStats extends Component {
 
   totalesAcumulados = (data, filterType)=>{
 
+    const orders = data.reduce( (acum, current) => { return acum + current.orders },0 )
+    const subtotal = data.reduce( (acum, current) => { return acum + current.subtotal },0 )
+    const itemDiscount = data.reduce( (acum, current) => { return acum + current.itemDiscount },0 )
+    const checkDiscount = data.reduce( (acum, current) => { return acum + current.checkDiscount },0 )
+    const tax = data.reduce( (acum, current) => { return acum + current.tax },0 )
+    const total = data.reduce( (acum, current) => { return acum + current.total },0 )
     const cashPaid = data.reduce( (acum, current) => { return acum + current.cashPaid },0 )
     const cardPaid = data.reduce( (acum, current) => { return acum + current.cardPaid },0 )
     const otherPaid = data.reduce( (acum, current) => { return acum + current.otherPaid },0 )
-    const creditNote = data.reduce( (acum, current) => { return acum + current.creditNote },0 )
+    const partialCreditNoteCount = data.reduce( (acum, current) => { return acum + current.partialCreditNoteCount },0 )
+    const partialCreditNote = data.reduce( (acum, current) => { return acum + current.partialCreditNote },0 )
     const creditNoteCount = data.reduce( (acum, current) => { return acum + current.creditNoteCount },0 )
-    const openedOrdersCount = data.reduce( (acum, current) => { return acum + current.openedOrdersCount },0 )
-    const deletedOrdersCount = data.reduce( (acum, current) => { return acum + current.deletedOrdersCount },0 )
+    const creditNote = data.reduce( (acum, current) => { return acum + current.creditNote },0 )
     const cashIncome = data.reduce( (acum, current) => { return acum + current.cashIncome },0 )
     const cashOut = data.reduce( (acum, current) => { return acum + current.cashOut },0 )
+    const openedOrdersCount = data.reduce( (acum, current) => { return acum + current.openedOrdersCount },0 )
+    const deletedOrdersCount = data.reduce( (acum, current) => { return acum + current.deletedOrdersCount },0 )
 
     const auxArray = [
+      {name: 'Ordenes', amount: orders, isCurrency: false},
+      {name: 'Subtotal', amount: subtotal, isCurrency: true},
+      {name: 'Descuento Items', amount: itemDiscount, isCurrency: true},
+      {name: 'Descuento Orden', amount: checkDiscount, isCurrency: true},
+      {name: 'Impuestos', amount: tax, isCurrency: true},
+      {name: 'Total', amount: total, isCurrency: true},
       {name: 'Efectivo', amount: cashPaid, isCurrency: true},
       {name: 'Tarjeta', amount: cardPaid, isCurrency: true},
       {name: 'Otro', amount: otherPaid, isCurrency: true},
+      {name: 'N. Cred. Parcial', amount: partialCreditNoteCount, isCurrency: false},
+      {name: 'Nota Credito Parc', amount: partialCreditNote, isCurrency: true},
+      {name: 'N. Credito', amount: creditNoteCount, isCurrency: false},
       {name: 'Nota Credito', amount: creditNote, isCurrency: true},
-      {name: 'Cant Nota Credito', amount: creditNoteCount, isCurrency: false},
-      {name: 'Ordenes Abiertas', amount: openedOrdersCount, isCurrency: false},
-      {name: 'Ordenes Eliminadas', amount: deletedOrdersCount, isCurrency: false},
       {name: 'Ingreso Caja', amount: cashIncome, isCurrency: true},
-      {name: 'Retiro Caja', amount: cashOut, isCurrency: true}
+      {name: 'Retiro Caja', amount: cashOut, isCurrency: true},
+      {name: 'Ordenes Abiertas', amount: openedOrdersCount, isCurrency: false},
+      {name: 'Ordenes Elim', amount: deletedOrdersCount, isCurrency: false},
     ]
 
     // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
@@ -305,15 +331,23 @@ class PaymentStats extends Component {
       const branchData = this.state.paymentsData.filter((branch)=> branch.name.toLowerCase()===selectedBranch)
 
       const auxArray = [
+        {name: 'Ordenes', amount: branchData[0].orders, isCurrency: false},
+        {name: 'Subtotal', amount: branchData[0].subtotal, isCurrency: true},
+        {name: 'Descuento Items', amount: branchData[0].itemDiscount, isCurrency: true},
+        {name: 'Descuento Orden', amount: branchData[0].checkDiscount, isCurrency: true},
+        {name: 'Impuestos', amount: branchData[0].tax, isCurrency: true},
+        {name: 'Total', amount: branchData[0].total, isCurrency: true},
         {name: 'Efectivo', amount: branchData[0].cashPaid, isCurrency: true},
         {name: 'Tarjeta', amount: branchData[0].cardPaid, isCurrency: true},
         {name: 'Otro', amount: branchData[0].otherPaid, isCurrency: true},
+        {name: 'N. Cred. Parcial', amount: branchData[0].partialCreditNoteCount, isCurrency: false},
+        {name: 'Nota Credito Parc', amount: branchData[0].partialCreditNote, isCurrency: true},
+        {name: 'N. Credito', amount: branchData[0].creditNoteCount, isCurrency: false},
         {name: 'Nota Credito', amount: branchData[0].creditNote, isCurrency: true},
-        {name: 'Cant Nota Credito', amount: branchData[0].creditNoteCount, isCurrency: false},
-        {name: 'Ordenes Abiertas', amount: branchData[0].openedOrdersCount, isCurrency: false},
-        {name: 'Ordenes Eliminadas', amount: branchData[0].deletedOrdersCount, isCurrency: false},
         {name: 'Ingreso Caja', amount: branchData[0].cashIncome, isCurrency: true},
-        {name: 'Retiro Caja', amount: branchData[0].cashOut, isCurrency: true}
+        {name: 'Retiro Caja', amount: branchData[0].cashOut, isCurrency: true},
+        {name: 'Ordenes Abiertas', amount: branchData[0].openedOrdersCount, isCurrency: false},
+        {name: 'Ordenes Elim', amount: branchData[0].deletedOrdersCount, isCurrency: false},
       ]
       this.setState({dataList: auxArray})
     }
@@ -442,7 +476,7 @@ class PaymentStats extends Component {
                   {(this.state.activeBranch!=='')?`(${this.state.activeBranch})`:''}
                 </span>
 
-                <Payment data={this.state.dataList} />
+                <DaySummary data={this.state.dataList} />
               </div>
             }
           </div>

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {color} from './../../shared/styles'
 import utils from './../../shared/utilities'
 
-class Payment extends Component {
+class DaySummary extends Component {
 
   constructor(props) {
     super(props)
@@ -29,7 +29,7 @@ class Payment extends Component {
             amount = ( typeof item.amount === 'undefined' ) ? 0 : item.amount
 
             const element =
-            <div key={index} className="p-1">
+            <div key={index} className="p-1" style={{width: 190}}>
 
 
               <div className="card">
@@ -38,7 +38,7 @@ class Payment extends Component {
                 </div>
                 <div className="card-body">
                   {/* <h4 className="card-title"></h4> */}
-                  <p className="card-text"><span style={styles.salesLabel}>{item.isCurrency?`$ ${utils.formatNumber(amount.toFixed(2))}`:`${utils.formatNumber(amount.toFixed(2))}`}</span></p>
+                  <p className="card-text"><span style={styles.salesLabel}>{item.isCurrency?`$ ${utils.formatNumber(amount.toFixed(2))}`:`${amount}`}</span></p>
                   {/* <span className="btn btn-primary">Go somewhere</span> */}
                 </div>
                 {/* <div className="card-footer text-muted">
@@ -73,15 +73,15 @@ class Payment extends Component {
 
 }
 
-Payment.propTypes = {
+DaySummary.propTypes = {
   data: PropTypes.array
 }
 
-Payment.defaultProps = {
+DaySummary.defaultProps = {
   data: []
 }
 
-export default Payment
+export default DaySummary
 
 const styles = {
   title: {
