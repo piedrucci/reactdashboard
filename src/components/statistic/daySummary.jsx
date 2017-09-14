@@ -312,7 +312,7 @@ class PaymentStats extends Component {
       {name: 'Ingreso Caja', amount: cashIncome, isCurrency: true},
       {name: 'Retiro Caja', amount: cashOut, isCurrency: true},
       {name: 'Ordenes Abiertas', amount: openedOrdersCount, isCurrency: false},
-      {name: 'Ordenes Elim', amount: deletedOrdersCount, isCurrency: false},
+      {name: 'Ords Eliminadas', amount: deletedOrdersCount, isCurrency: false},
     ]
 
     // ACTUALIZAR EL ESTADO ... ARRAY CON RESUMEN POR SUCURSALES
@@ -347,9 +347,11 @@ class PaymentStats extends Component {
         {name: 'Ingreso Caja', amount: branchData[0].cashIncome, isCurrency: true},
         {name: 'Retiro Caja', amount: branchData[0].cashOut, isCurrency: true},
         {name: 'Ordenes Abiertas', amount: branchData[0].openedOrdersCount, isCurrency: false},
-        {name: 'Ordenes Elim', amount: branchData[0].deletedOrdersCount, isCurrency: false},
+        {name: 'Ords Eliminadas', amount: branchData[0].deletedOrdersCount, isCurrency: false},
       ]
       this.setState({dataList: auxArray})
+    }else{
+      this.totalesAcumulados(this.state.paymentsData, filter.day)
     }
   }
 
@@ -419,7 +421,7 @@ class PaymentStats extends Component {
               onChange={(val)=>this.updateDataFromBranch(val)}
               >
 
-              <option value=''>Seleccione</option>
+              <option value=''>---Todas---</option>
               {this.state.branchsData.map((branch, index)=> <option key={index} value={branch.negocio.toLowerCase()}>{branch.negocio}</option>)}
             </select>
             : null }

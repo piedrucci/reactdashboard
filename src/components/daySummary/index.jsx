@@ -96,7 +96,7 @@ const styles = {
     // color: '#999999',
     color: '#888888',
     fontWeight: 'bold',
-    fontSize: '1.6em',
+    fontSize: '1.4em',
     textAlign: 'right'
   },
 
