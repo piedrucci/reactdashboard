@@ -10,6 +10,11 @@ import locale_es from 'moment/locale/es'
 import {color} from './../../shared/styles'
 // import DateTimePicker from 'react-datetimepicker-bootstrap'
 import * as Datetime from 'react-datetime'
+import { DateRange } from 'react-date-range'
+
+import { DateRangePicker } from 'react-dates'
+import 'react-dates/lib/css/_datepicker.css';
+import { START_DATE, END_DATE, HORIZONTAL_ORIENTATION } from '../../shared/dateRangePickerConstants';
 
 let toggleButtonDate = false
 
@@ -22,8 +27,8 @@ const filter = {
 
 class PaymentStats extends Component {
 
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
     this.state = {
       // parametros necesarios para conectarse a la API
       params: '',
@@ -46,12 +51,21 @@ class PaymentStats extends Component {
       iconDateButton: <i className="fa fa-arrow-down" aria-hidden="true"></i>,
       pickerDate: '',
       activeBranch: '',
+
+      startDate: moment("09/01/2017"),
+      endDate: moment("09/28/2017"),
+      // focusedInput: props.autoFocusEndDate ? END_DATE : START_DATE,
+      focusedInput: START_DATE,
     }
 
     this.setFilterType = this.setFilterType.bind(this)
     this.toggleIconButtonDate = this.toggleIconButtonDate.bind(this)
     this.executeCalc = this.executeCalc.bind(this)
     this.updateDataFromBranch = this.updateDataFromBranch.bind(this)
+
+    // para el dateRangePicker
+    this.onFocusChange = this.onFocusChange.bind(this);
+    this.onDatesChange = this.onDatesChange.bind(this);
   }
 
 
@@ -355,6 +369,24 @@ class PaymentStats extends Component {
     }
   }
 
+  handleSelect(range){
+		console.log(range);
+		// An object with two keys,
+		// 'startDate' and 'endDate' which are Momentjs objects.
+	}
+
+// para el dateRangePicker
+  onFocusChange(focusedInput) {
+    this.setState({
+      // Force the focusedInput to always be truthy so that dates are always selectable
+      focusedInput: !focusedInput ? START_DATE : focusedInput,
+    });
+  }
+
+  onDatesChange({ startDate, endDate }) {
+    this.setState({ startDate, endDate });
+  }
+
 
   render() {
 
@@ -462,6 +494,23 @@ class PaymentStats extends Component {
                       this.executeCalc(fe1)
                     }}
                   />
+
+                  {/* <DateRange
+                    onInit={this.handleSelect}
+                    onChange={this.handleSelect}
+                  /> */}
+
+                  <DateRangePicker
+                    startDate={this.state.startDate} // momentPropTypes.momentObj or null,
+                    endDate={this.state.endDate} // momentPropTypes.momentObj or null,
+                    onDatesChange={({ startDate, endDate }) => this.setState({ startDate, endDate })} // PropTypes.func.isRequired,
+                    focusedInput={this.state.focusedInput} // PropTypes.oneOf([START_DATE, END_DATE]) or null,
+                    onFocusChange={focusedInput => this.setState({ focusedInput })} // PropTypes.func.isRequired,
+                    isOutsideRange={date => date.year() !== 2017}
+                  />
+
+
+
                 </div>
               </div>
 
@@ -503,4 +552,9 @@ const styles = {
   fontSpinner: {
     fontSize: 18
   }
+}
+
+const defaultProps = {
+  // example props for the demo
+  autoFocusEndDate: false,
 }
