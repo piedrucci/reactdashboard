@@ -52,8 +52,8 @@ class PaymentStats extends Component {
       pickerDate: '',
       activeBranch: '',
 
-      startDate: moment("09/01/2017"),
-      endDate: moment("09/28/2017"),
+      startDate: moment(), //"09/01/2017"
+      endDate: moment(),
       // focusedInput: props.autoFocusEndDate ? END_DATE : START_DATE,
       focusedInput: START_DATE,
     }
@@ -500,14 +500,7 @@ class PaymentStats extends Component {
                     onChange={this.handleSelect}
                   /> */}
 
-                  <DateRangePicker
-                    startDate={this.state.startDate} // momentPropTypes.momentObj or null,
-                    endDate={this.state.endDate} // momentPropTypes.momentObj or null,
-                    onDatesChange={({ startDate, endDate }) => this.setState({ startDate, endDate })} // PropTypes.func.isRequired,
-                    focusedInput={this.state.focusedInput} // PropTypes.oneOf([START_DATE, END_DATE]) or null,
-                    onFocusChange={focusedInput => this.setState({ focusedInput })} // PropTypes.func.isRequired,
-                    isOutsideRange={date => date.year() !== 2017}
-                  />
+
 
 
 
@@ -521,6 +514,15 @@ class PaymentStats extends Component {
               ? <Progress visible={true} />
               :
               <div>
+
+                <DateRangePicker
+                  startDate={this.state.startDate} // momentPropTypes.momentObj or null,
+                  endDate={this.state.endDate} // momentPropTypes.momentObj or null,
+                  onDatesChange={({ startDate, endDate }) => this.setState({ startDate, endDate })} // PropTypes.func.isRequired,
+                  focusedInput={this.state.focusedInput} // PropTypes.oneOf([START_DATE, END_DATE]) or null,
+                  onFocusChange={focusedInput => this.setState({ focusedInput })} // PropTypes.func.isRequired,
+                  isOutsideRange={date => date !== moment()}
+                /> <br />
 
                 <i className="fa fa-calendar" aria-hidden="true"></i><span style={{color: '#888888'}}>
                   &nbsp;&nbsp;{this.state.fullDateStr}&nbsp;
